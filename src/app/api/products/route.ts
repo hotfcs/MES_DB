@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       WHERE 1=1
     `;
 
-    const params: Record<string, any> = {};
+    const params: Record<string, string | number | null> = {};
 
     if (search) {
       query += ` AND name LIKE '%' + @search + '%'`;
@@ -50,11 +50,11 @@ export async function GET(request: NextRequest) {
       data: products,
       count: products.length,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json({
       success: false,
       message: '상품 조회 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }
@@ -84,11 +84,11 @@ export async function POST(request: NextRequest) {
       message: '상품 추가 성공',
       rowsAffected,
     }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json({
       success: false,
       message: '상품 추가 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }
@@ -107,7 +107,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const updates: string[] = [];
-    const params: Record<string, any> = { id };
+    const params: Record<string, string | number | null> = { id };
 
     if (name !== undefined) {
       updates.push('name = @name');
@@ -142,11 +142,11 @@ export async function PUT(request: NextRequest) {
       message: '상품 수정 성공',
       rowsAffected,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json({
       success: false,
       message: '상품 수정 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }
@@ -172,11 +172,11 @@ export async function DELETE(request: NextRequest) {
       message: '상품 삭제 성공',
       rowsAffected,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json({
       success: false,
       message: '상품 삭제 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }

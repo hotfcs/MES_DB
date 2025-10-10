@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     // 마지막 로그인 시간 업데이트
     await executeNonQuery(
       'UPDATE users SET last_login = GETDATE(), modified_at = GETDATE() WHERE id = @id',
-      { id: user.id }
+      { id: user.id as number }
     );
 
     // 로그인 이력 기록
@@ -45,11 +45,11 @@ export async function POST(request: NextRequest) {
       INSERT INTO login_history (user_id, account, name, action, timestamp, ip_address, host_name)
       VALUES (@userId, @account, @name, 'login', GETDATE(), @ipAddress, @hostName)
     `, {
-      userId: user.id,
-      account: user.account,
-      name: user.name,
-      ipAddress: clientInfo.ipAddress,
-      hostName: clientInfo.hostName
+      userId: user.id as number,
+      account: user.account as string,
+      name: user.name as string,
+      ipAddress: clientInfo.ipAddress as string | null,
+      hostName: clientInfo.hostName as string | null
     });
 
     return NextResponse.json({
@@ -69,12 +69,12 @@ export async function POST(request: NextRequest) {
         }
       }
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('로그인 에러:', error);
     return NextResponse.json({
       success: false,
       message: '로그인 처리 중 오류가 발생했습니다',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }

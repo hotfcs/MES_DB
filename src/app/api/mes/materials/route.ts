@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       WHERE 1=1
     `;
 
-    const params: Record<string, any> = {};
+    const params: Record<string, string | number | null> = {};
 
     if (status) {
       query += ` AND status = @status`;
@@ -46,12 +46,12 @@ export async function GET(request: NextRequest) {
       data: materials,
       count: materials.length,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('자재 조회 에러:', error);
     return NextResponse.json({
       success: false,
       message: '자재 조회 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }
@@ -98,12 +98,12 @@ export async function POST(request: NextRequest) {
       success: true,
       message: '자재가 추가되었습니다',
     }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('자재 추가 에러:', error);
     return NextResponse.json({
       success: false,
       message: '자재 추가 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }
@@ -133,13 +133,13 @@ export async function PUT(request: NextRequest) {
     };
 
     const updateParts: string[] = [];
-    const params: Record<string, any> = { id };
+    const params: Record<string, string | number | null> = { id };
 
     Object.entries(updates).forEach(([key, value]) => {
-      const dbField = fieldMapping[key];
+      const dbField = fieldMapping[key as keyof typeof fieldMapping];
       if (dbField) {
         updateParts.push(`${dbField} = @${key}`);
-        params[key] = value;
+        params[key] = value as string | number | null;
       }
     });
 
@@ -164,12 +164,12 @@ export async function PUT(request: NextRequest) {
       success: true,
       message: '자재 정보가 수정되었습니다',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('자재 수정 에러:', error);
     return NextResponse.json({
       success: false,
       message: '자재 수정 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }
@@ -192,12 +192,12 @@ export async function DELETE(request: NextRequest) {
       success: true,
       message: '자재가 삭제되었습니다',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('자재 삭제 에러:', error);
     return NextResponse.json({
       success: false,
       message: '자재 삭제 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }

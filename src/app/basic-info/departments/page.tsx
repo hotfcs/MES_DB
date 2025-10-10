@@ -71,14 +71,7 @@ export default function DepartmentsPage() {
 
   const handleEditDepartment = () => {
     if (editingDepartment) {
-      updateDepartment(editingDepartment.id, (prev) => ({
-        ...prev,
-        name: editingDepartment.name,
-        code: editingDepartment.code,
-        manager: editingDepartment.manager,
-        description: editingDepartment.description,
-        status: editingDepartment.status
-      }));
+      updateDepartment(editingDepartment.id, editingDepartment);
       setEditingDepartment(null);
       setShowEditModal(false);
       setSelectedDepartment(editingDepartment);

@@ -758,8 +758,8 @@ export function useLinesStore() {
 
   return {
     lines, loading,
-    addLine: async (line: any) => { await fetchAPI('/api/mes/lines', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(line) }); await fetchLines(); },
-    updateLine: async (id: number, updates: any) => { await fetchAPI('/api/mes/lines', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...updates }) }); await fetchLines(); },
+    addLine: async (line: Omit<Line, 'id' | 'createdAt' | 'modifiedAt'>) => { await fetchAPI('/api/mes/lines', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(line) }); await fetchLines(); },
+    updateLine: async (id: number, updates: Partial<Line>) => { await fetchAPI('/api/mes/lines', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...updates }) }); await fetchLines(); },
     deleteLine: async (id: number) => { await fetchAPI(`/api/mes/lines?id=${id}`, { method: 'DELETE' }); await fetchLines(); },
     refreshLines: fetchLines,
   };
@@ -786,8 +786,8 @@ export function useEquipmentsStore() {
 
   return {
     equipments, loading,
-    addEquipment: async (equipment: any) => { await fetchAPI('/api/mes/equipments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(equipment) }); await fetchEquipments(); },
-    updateEquipment: async (id: number, updates: any) => { await fetchAPI('/api/mes/equipments', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...updates }) }); await fetchEquipments(); },
+    addEquipment: async (equipment: Omit<Equipment, 'id' | 'createdAt' | 'modifiedAt'>) => { await fetchAPI('/api/mes/equipments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(equipment) }); await fetchEquipments(); },
+    updateEquipment: async (id: number, updates: Partial<Equipment>) => { await fetchAPI('/api/mes/equipments', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...updates }) }); await fetchEquipments(); },
     deleteEquipment: async (id: number) => { await fetchAPI(`/api/mes/equipments?id=${id}`, { method: 'DELETE' }); await fetchEquipments(); },
     refreshEquipments: fetchEquipments,
   };
@@ -814,8 +814,8 @@ export function useProcessesStore() {
 
   return {
     processes, loading,
-    addProcess: async (process: any) => { await fetchAPI('/api/mes/processes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(process) }); await fetchProcesses(); },
-    updateProcess: async (id: number, updates: any) => { await fetchAPI('/api/mes/processes', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...updates }) }); await fetchProcesses(); },
+    addProcess: async (process: Omit<Process, 'id' | 'createdAt' | 'modifiedAt'>) => { await fetchAPI('/api/mes/processes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(process) }); await fetchProcesses(); },
+    updateProcess: async (id: number, updates: Partial<Process>) => { await fetchAPI('/api/mes/processes', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...updates }) }); await fetchProcesses(); },
     deleteProcess: async (id: number) => { await fetchAPI(`/api/mes/processes?id=${id}`, { method: 'DELETE' }); await fetchProcesses(); },
     refreshProcesses: fetchProcesses,
   };
@@ -858,7 +858,7 @@ export function useRoutingsStore() {
     loading,
     getRoutingStepsByRoutingId,
     saveRoutingSteps,
-    addRouting: async (routing: any) => { await fetchAPI('/api/mes/routings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(routing) }); await fetchRoutings(); },
+    addRouting: async (routing: Omit<Routing, 'id' | 'createdAt' | 'modifiedAt'>) => { await fetchAPI('/api/mes/routings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(routing) }); await fetchRoutings(); },
     updateRouting: async () => { await fetchRoutings(); },
     deleteRouting: async (id: number) => { await fetchAPI(`/api/mes/routings?id=${id}`, { method: 'DELETE' }); await fetchRoutings(); },
     addRoutingStep: async () => { await fetchRoutings(); },
@@ -905,7 +905,7 @@ export function useBOMsStore() {
     loading,
     getBOMItemsByBOMId,
     saveBOMItems,
-    addBOM: async (bom: any) => { await fetchAPI('/api/mes/boms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bom) }); await fetchBOMs(); },
+    addBOM: async (bom: Omit<BOM, 'id' | 'createdAt' | 'modifiedAt'>) => { await fetchAPI('/api/mes/boms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bom) }); await fetchBOMs(); },
     updateBOM: async () => { await fetchBOMs(); },
     deleteBOM: async (id: number) => { await fetchAPI(`/api/mes/boms?id=${id}`, { method: 'DELETE' }); await fetchBOMs(); },
     addBOMItem: async () => { await fetchBOMs(); },
@@ -936,8 +936,8 @@ export function useWarehousesStore() {
 
   return {
     warehouses, loading,
-    addWarehouse: async (warehouse: any) => { await fetchAPI('/api/mes/warehouses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(warehouse) }); await fetchWarehouses(); },
-    updateWarehouse: async (id: number, updates: any) => { await fetchAPI('/api/mes/warehouses', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...updates }) }); await fetchWarehouses(); },
+    addWarehouse: async (warehouse: Omit<Warehouse, 'id' | 'createdAt' | 'modifiedAt'>) => { await fetchAPI('/api/mes/warehouses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(warehouse) }); await fetchWarehouses(); },
+    updateWarehouse: async (id: number, updates: Partial<Warehouse>) => { await fetchAPI('/api/mes/warehouses', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, ...updates }) }); await fetchWarehouses(); },
     deleteWarehouse: async (id: number) => { await fetchAPI(`/api/mes/warehouses?id=${id}`, { method: 'DELETE' }); await fetchWarehouses(); },
     refreshWarehouses: fetchWarehouses,
   };
@@ -964,8 +964,15 @@ export function useProductionPlansStore() {
 
   return {
     productionPlans, loading,
-    addProductionPlan: async (plan: any) => { await fetchAPI('/api/mes/production-plans', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(plan) }); await fetchProductionPlans(); },
-    updateProductionPlan: async () => { await fetchProductionPlans(); },
+    addProductionPlan: async (plan: Omit<ProductionPlan, 'id' | 'createdAt' | 'modifiedAt'>) => { await fetchAPI('/api/mes/production-plans', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(plan) }); await fetchProductionPlans(); },
+    updateProductionPlan: async (plan: Partial<ProductionPlan> & {id: number}) => { 
+      await fetchAPI(`/api/mes/production-plans`, { 
+        method: 'PUT', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify(plan) 
+      }); 
+      await fetchProductionPlans(); 
+    },
     deleteProductionPlan: async (id: number) => { await fetchAPI(`/api/mes/production-plans?id=${id}`, { method: 'DELETE' }); await fetchProductionPlans(); },
     refreshProductionPlans: fetchProductionPlans,
   };

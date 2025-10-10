@@ -13,8 +13,8 @@ export async function GET(request: NextRequest) {
     `;
     const lines = await executeQuery(query);
     return NextResponse.json({ success: true, data: lines, count: lines.length });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
 }
 
@@ -28,8 +28,8 @@ export async function POST(request: NextRequest) {
       { code, name, location: location || '', capacity: capacity || 0, manager: manager || '', description: description || '', status }
     );
     return NextResponse.json({ success: true, message: '라인이 추가되었습니다' }, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
 }
 
@@ -44,8 +44,8 @@ export async function PUT(request: NextRequest) {
 
     await executeNonQuery(`UPDATE lines SET ${setParts.join(', ')}, modified_at = GETDATE() WHERE id = @id`, { id, ...updates });
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
 }
 
@@ -55,8 +55,8 @@ export async function DELETE(request: NextRequest) {
     if (!id) return NextResponse.json({ success: false, message: 'id 필수' }, { status: 400 });
     await executeNonQuery('DELETE FROM lines WHERE id = @id', { id: parseInt(id) });
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
 }
 

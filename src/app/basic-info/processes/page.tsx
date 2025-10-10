@@ -30,7 +30,8 @@ export default function ProcessesPage() {
     standardTime: 0,
     line: "",
     warehouse: "",
-    description: ""
+    description: "",
+    status: "active" as const
   });
 
   // Permission check
@@ -66,13 +67,14 @@ export default function ProcessesPage() {
       standardTime: 0,
       line: "",
       warehouse: "",
-      description: ""
+      description: "",
+      status: "active" as const
     });
   };
 
   const handleUpdateProcess = () => {
     if (!editingProcess) return;
-    updateProcess(editingProcess.id, () => editingProcess);
+    updateProcess(editingProcess.id, editingProcess);
     setShowEditModal(false);
     setEditingProcess(null);
     if (selectedProcess?.id === editingProcess.id) {

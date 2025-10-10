@@ -17,11 +17,11 @@ export async function GET() {
         message: 'Azure SQL Server 연결 실패',
       }, { status: 500 });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json({
       success: false,
       message: '연결 중 에러 발생',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }

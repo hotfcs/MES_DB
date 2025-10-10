@@ -107,10 +107,10 @@ export default function RolesPage() {
           }
         });
 
-        updateRole(selectedRole.id, (prev) => ({
-          ...prev,
+        updateRole(selectedRole.id, {
+          ...selectedRole,
           permissions: newPermissions
-        }));
+        });
 
         // 성공 알림 표시
         setNotification({

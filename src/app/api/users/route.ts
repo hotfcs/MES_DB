@@ -29,11 +29,11 @@ export async function GET(request: NextRequest) {
       data: users,
       count: users.length,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json({
       success: false,
       message: '사용자 조회 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }
@@ -63,11 +63,11 @@ export async function POST(request: NextRequest) {
       message: '사용자 추가 성공',
       rowsAffected,
     }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json({
       success: false,
       message: '사용자 추가 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }
@@ -93,11 +93,11 @@ export async function DELETE(request: NextRequest) {
       message: '사용자 삭제 성공',
       rowsAffected,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json({
       success: false,
       message: '사용자 삭제 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }

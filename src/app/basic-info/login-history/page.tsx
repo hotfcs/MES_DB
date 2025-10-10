@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import * as XLSX from 'xlsx';
-import { useLoginHistoryStore, useUsersStore } from "@/store/dataStore-optimized";
+import { useLoginHistoryStore, useUsersStore, type User } from "@/store/dataStore-optimized";
 
 export default function LoginHistoryPage() {
   const { loginHistory } = useLoginHistoryStore();
@@ -13,7 +13,7 @@ export default function LoginHistoryPage() {
 
   // 사용자별 부서 정보 가져오기
   const getUserDepartment = (account: string) => {
-    const user = users.find(u => u.account === account);
+    const user = users.find((u: User) => u.account === account);
     return user?.department || "-";
   };
 

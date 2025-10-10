@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       WHERE 1=1
     `;
 
-    const params: Record<string, any> = {};
+    const params: Record<string, string | number> = {};
 
     if (status) {
       query += ` AND status = @status`;
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
       search ? " AND (name LIKE @search + '%' OR code LIKE @search + '%')" : ''
     }`;
 
-    const [countResult] = await executeQuery(countQuery, params);
+    const [countResult] = await executeQuery<{ total: number }>(countQuery, params);
     const total = countResult.total;
 
     // 정렬 및 페이지네이션
@@ -73,12 +73,12 @@ export async function GET(request: NextRequest) {
       page,
       totalPages: Math.ceil(total / limit),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('제품 조회 에러:', error);
     return NextResponse.json({
       success: false,
       message: '제품 조회 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }
@@ -139,12 +139,12 @@ export async function POST(request: NextRequest) {
       success: true,
       message: '제품이 추가되었습니다',
     }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('제품 추가 에러:', error);
     return NextResponse.json({
       success: false,
       message: '제품 추가 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }
@@ -169,13 +169,13 @@ export async function PUT(request: NextRequest) {
     ];
 
     const updateParts: string[] = [];
-    const params: Record<string, any> = { id };
+    const params: Record<string, string | number | null> = { id };
 
     Object.entries(updates).forEach(([key, value]) => {
       const dbKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
       if (allowedFields.includes(dbKey)) {
         updateParts.push(`${dbKey} = @${key}`);
-        params[key] = value;
+        params[key] = value as string | number | null;
       }
     });
 
@@ -200,12 +200,12 @@ export async function PUT(request: NextRequest) {
       success: true,
       message: '제품 정보가 수정되었습니다',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('제품 수정 에러:', error);
     return NextResponse.json({
       success: false,
       message: '제품 수정 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }
@@ -229,12 +229,12 @@ export async function DELETE(request: NextRequest) {
       success: true,
       message: '제품이 삭제되었습니다',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('제품 삭제 에러:', error);
     return NextResponse.json({
       success: false,
       message: '제품 삭제 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }

@@ -28,6 +28,7 @@ export default function CustomersPage() {
     address: string;
     manager: string;
     managerPhone: string;
+    status: Customer["status"];
   }>({
     code: "",
     name: "",
@@ -38,7 +39,8 @@ export default function CustomersPage() {
     email: "",
     address: "",
     manager: "",
-    managerPhone: ""
+    managerPhone: "",
+    status: "active"
   });
 
   // Permission check
@@ -60,7 +62,7 @@ export default function CustomersPage() {
     return permissions.includes("CUSTOMERS_EDIT") || permissions.includes('ALL');
   };
 
-  const filteredCustomers = customers.filter(customer => {
+  const filteredCustomers = customers.filter((customer: Customer) => {
     const matchesSearch = 
       customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -84,7 +86,8 @@ export default function CustomersPage() {
       email: "",
       address: "",
       manager: "",
-      managerPhone: ""
+      managerPhone: "",
+      status: "active"
     });
   };
 
@@ -109,7 +112,7 @@ export default function CustomersPage() {
   const handleExportExcel = () => {
     const worksheetData = [
       ["거래처코드", "거래처명", "거래처구분", "대표자명", "사업자번호", "전화번호", "이메일", "주소", "담당자", "담당자연락처", "사용유무", "생성일"],
-      ...filteredCustomers.map(customer => [
+      ...filteredCustomers.map((customer: Customer) => [
         customer.code,
         customer.name,
         customer.type,
@@ -235,7 +238,7 @@ export default function CustomersPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredCustomers.map((customer) => (
+                  filteredCustomers.map((customer: Customer) => (
                     <tr
                       key={customer.id}
                       onClick={() => setSelectedCustomer(customer)}

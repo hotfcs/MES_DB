@@ -22,7 +22,8 @@ export default function RoutingsPage() {
   
   const [newRouting, setNewRouting] = useState({
     code: "",
-    name: ""
+    name: "",
+    status: "active" as const
   });
 
   // Get active options
@@ -65,7 +66,7 @@ export default function RoutingsPage() {
       return;
     }
     addRouting(newRouting);
-    setNewRouting({ code: "", name: "" });
+    setNewRouting({ code: "", name: "", status: "active" as const });
     setShowAddModal(false);
   };
 

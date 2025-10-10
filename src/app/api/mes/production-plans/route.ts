@@ -29,11 +29,11 @@ export async function GET() {
       data: plans, 
       count: plans.length 
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('생산계획 조회 에러:', error);
     return NextResponse.json({ 
       success: false, 
-      error: error.message 
+      error: error instanceof Error ? error.message : 'Unknown error' 
     }, { status: 500 });
   }
 }
@@ -90,10 +90,10 @@ export async function POST(request: NextRequest) {
       success: true,
       message: '생산계획이 추가되었습니다'
     }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json({ 
       success: false, 
-      error: error.message 
+      error: error instanceof Error ? error.message : 'Unknown error' 
     }, { status: 500 });
   }
 }
@@ -117,10 +117,10 @@ export async function DELETE(request: NextRequest) {
       success: true,
       message: '생산계획이 삭제되었습니다'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json({ 
       success: false, 
-      error: error.message 
+      error: error instanceof Error ? error.message : 'Unknown error' 
     }, { status: 500 });
   }
 }

@@ -31,12 +31,12 @@ export async function POST(request: NextRequest) {
       success: true,
       message: '로그아웃 성공',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('로그아웃 에러:', error);
     return NextResponse.json({
       success: false,
       message: '로그아웃 처리 중 오류가 발생했습니다',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }

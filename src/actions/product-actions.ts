@@ -19,11 +19,11 @@ export async function getProducts(): Promise<ActionResponse<Product[]>> {
       success: true,
       data: products,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('상품 조회 에러:', error);
     return {
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -51,11 +51,11 @@ export async function addProduct(formData: FormData): Promise<ActionResponse> {
     revalidatePath('/examples/azure-sql-server-actions');
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('상품 추가 에러:', error);
     return {
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -71,7 +71,7 @@ export async function updateProduct(
     const stock = parseInt(formData.get('stock') as string);
 
     const updates: string[] = [];
-    const params: Record<string, any> = { id };
+    const params: Record<string, string | number | null> = { id };
 
     if (name) {
       updates.push('name = @name');
@@ -103,11 +103,11 @@ export async function updateProduct(
     revalidatePath('/examples/azure-sql-server-actions');
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('상품 수정 에러:', error);
     return {
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -120,11 +120,11 @@ export async function deleteProduct(id: number): Promise<ActionResponse> {
     revalidatePath('/examples/azure-sql-server-actions');
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('상품 삭제 에러:', error);
     return {
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }

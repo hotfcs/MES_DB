@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useWorkOrdersStore, type WorkOrder, useProductionPlansStore, type ProductionPlan, useProductsStore, useLinesStore, useBOMsStore, useRoutingsStore, useMaterialsStore } from "@/store/dataStore-optimized";
+import { useWorkOrdersStore, type WorkOrder, useProductionPlansStore, type ProductionPlan, useProductsStore, type Product, useLinesStore, type Line, useBOMsStore, useRoutingsStore, useMaterialsStore } from "@/store/dataStore-optimized";
 import { useAuth } from "@/store/authStore";
 import { useRolesStore } from "@/store/dataStore-optimized";
 import * as XLSX from "xlsx";
@@ -11,21 +11,21 @@ const checkAndUpdatePlanStatus = (
   plan: ProductionPlan,
   totalOrderQty: number,
   orderCount: number,
-  updatePlan: (planId: number, updater: (prev: ProductionPlan) => ProductionPlan) => void
+  updatePlan: (plan: Partial<ProductionPlan> & {id: number}) => Promise<void>
 ) => {
   const remainingQty = plan.planQuantity - totalOrderQty;
   
   // Priority 1: If remaining quantity is 0 or less and status is not already "완료", update to "완료"
   if (remainingQty <= 0 && plan.status !== "완료") {
-    updatePlan(plan.id, (prev) => ({ ...prev, status: "완료" }));
+    updatePlan({ ...plan, status: "완료" });
   }
   // Priority 2: If there are 0 work orders and status is not "계획", update to "계획"
   else if (orderCount === 0 && plan.status !== "계획") {
-    updatePlan(plan.id, (prev) => ({ ...prev, status: "계획" }));
+    updatePlan({ ...plan, status: "계획" });
   }
   // Priority 3: If there are 1 or more work orders and status is "계획", update to "진행중"
   else if (orderCount >= 1 && plan.status === "계획") {
-    updatePlan(plan.id, (prev) => ({ ...prev, status: "진행중" }));
+    updatePlan({ ...plan, status: "진행중" });
   }
 };
 
@@ -77,9 +77,9 @@ export default function WorkOrderPage() {
   }, [workOrders, productionPlans, updateProductionPlan]);
 
   // Get active options
-  const activeProducts = products.filter(p => p.status === "active");
-  const activeLines = lines.filter(l => l.status === "active");
-  const activePlans = productionPlans.filter(p => p.status === "계획" || p.status === "진행중");
+  const activeProducts = products.filter((p: Product) => p.status === "active");
+  const activeLines = lines.filter((l: Line) => l.status === "active");
+  const activePlans = productionPlans.filter((p: ProductionPlan) => p.status === "계획" || p.status === "진행중");
 
   // Permission check
   const getUserPermissions = () => {
@@ -104,7 +104,7 @@ export default function WorkOrderPage() {
   const today = new Date().toISOString().split("T")[0];
   const filteredPlans = productionPlans.filter(plan => {
     // Get customer for the product
-    const product = products.find(p => p.code === plan.productCode);
+    const product = products.find((p: Product) => p.code === plan.productCode);
     const customerName = product?.customer || "";
     
     const matchesSearch = 
@@ -123,7 +123,7 @@ export default function WorkOrderPage() {
     }
     
     // Get customer for the product
-    const product = products.find(p => p.code === order.productCode);
+    const product = products.find((p: Product) => p.code === order.productCode);
     const customerName = product?.customer || "";
     
     const matchesSearch = 
@@ -257,7 +257,7 @@ export default function WorkOrderPage() {
       alert("생산계획, 지시수량은 필수 입력 항목입니다.");
       return;
     }
-    updateWorkOrder(editingOrder.id, () => editingOrder);
+    updateWorkOrder(editingOrder.id, editingOrder);
     
     // Update plan status after updating work order
     setTimeout(() => {
@@ -438,7 +438,7 @@ export default function WorkOrderPage() {
                     const remainingQty = plan.planQuantity - totalOrderQty;
                     
                     // Get customer for the product
-                    const product = products.find(p => p.code === plan.productCode);
+                    const product = products.find((p: Product) => p.code === plan.productCode);
                     const customerName = product?.customer || "-";
                     
                     return (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useBOMsStore, type BOM, type BOMItem, useProductsStore, useMaterialsStore, useRoutingsStore } from "@/store/dataStore-optimized";
+import { useBOMsStore, type BOM, type BOMItem, useProductsStore, type Product, useMaterialsStore, type Material, useRoutingsStore } from "@/store/dataStore-optimized";
 import { useAuth } from "@/store/authStore";
 import { useRolesStore } from "@/store/dataStore-optimized";
 import * as XLSX from "xlsx";
@@ -33,8 +33,8 @@ export default function BOMPage() {
   });
 
   // Get active options
-  const activeProducts = products.filter(p => p.status === "active");
-  const activeMaterials = materials.filter(m => m.status === "active");
+  const activeProducts = products.filter((p: Product) => p.status === "active");
+  const activeMaterials = materials.filter((m: Material) => m.status === "active");
 
   // Permission check
   const getUserPermissions = () => {
@@ -49,11 +49,11 @@ export default function BOMPage() {
   };
 
   // Get unique customers
-  const uniqueCustomers = Array.from(new Set(activeProducts.map(p => p.customer))).filter(c => c);
+  const uniqueCustomers = Array.from(new Set(activeProducts.map((p: Product) => p.customer))).filter(c => c) as string[];
 
   // Get products with BOM status
-  const productsWithBOMStatus = activeProducts.map(product => {
-    const hasBOM = boms.some(b => b.productCode === product.code);
+  const productsWithBOMStatus = activeProducts.map((product: Product) => {
+    const hasBOM = boms.some((b: BOM) => b.productCode === product.code);
     return {
       ...product,
       hasBOM
@@ -61,7 +61,7 @@ export default function BOMPage() {
   });
 
   // Filter products
-  const filteredProducts = productsWithBOMStatus.filter(product => {
+  const filteredProducts = productsWithBOMStatus.filter((product: Product & { hasBOM: boolean }) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           product.code.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = categoryFilter === "all" || product.category === categoryFilter;
@@ -71,7 +71,7 @@ export default function BOMPage() {
 
   // Get BOMs for selected product
   const productBOMs = selectedProductCode 
-    ? boms.filter(b => b.productCode === selectedProductCode)
+    ? boms.filter((b: BOM) => b.productCode === selectedProductCode)
     : [];
 
   // Load BOM items when BOM is selected
@@ -94,14 +94,14 @@ export default function BOMPage() {
     return steps.sort((a, b) => a.sequence - b.sequence);
   };
 
-  const handleAddBOM = () => {
+  const handleAddBOM = async () => {
     if (!newBOM.productCode || !newBOM.productName || !newBOM.routingId) {
       alert("제품과 라우팅을 선택해주세요.");
       return;
     }
     
     // Auto-generate revision number
-    const productBOMs = boms.filter(b => b.productCode === newBOM.productCode);
+    const productBOMs = boms.filter((b: BOM) => b.productCode === newBOM.productCode);
     let maxRevNum = 0;
     productBOMs.forEach(b => {
       const match = b.revision.match(/Rev\.(\d+)/);
@@ -112,15 +112,15 @@ export default function BOMPage() {
     });
     const autoRevision = `Rev.${String(maxRevNum + 1).padStart(2, '0')}`;
     
-    const newBOMData = addBOM({
+    await addBOM({
       ...newBOM,
-      revision: autoRevision
+      revision: autoRevision,
+      status: 'active'
     });
     
     setNewBOM({ productCode: "", productName: "", routingId: 0, routingName: "", revision: "Rev.01" });
     setShowAddBOMModal(false);
     setSelectedProductCode(newBOM.productCode);
-    setSelectedBOM(newBOMData);
   };
 
   const handleDeleteBOM = () => {
@@ -177,7 +177,7 @@ export default function BOMPage() {
       if (item.id === itemId) {
         if (field === 'materialCode') {
           // If material changed, update all related fields at once
-          const material = activeMaterials.find(m => m.code === String(value));
+          const material = activeMaterials.find((m: Material) => m.code === String(value));
           if (material) {
             return {
               ...item,
@@ -253,7 +253,7 @@ export default function BOMPage() {
 
   const handleProductSelectForBOM = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const productCode = e.target.value;
-    const product = activeProducts.find(p => p.code === productCode);
+    const product = activeProducts.find((p: Product) => p.code === productCode);
     if (product) {
       setNewBOM({
         ...newBOM,
@@ -370,7 +370,7 @@ export default function BOMPage() {
                       </td>
                     </tr>
                   ) : (
-                    filteredProducts.map((product) => (
+                    filteredProducts.map((product: Product & { hasBOM: boolean }) => (
                       <tr
                         key={product.id}
                         onClick={() => {
@@ -409,7 +409,7 @@ export default function BOMPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => {
-                      const product = activeProducts.find(p => p.code === selectedProductCode);
+                      const product = activeProducts.find((p: Product) => p.code === selectedProductCode);
                       if (product) {
                         setNewBOM({
                           productCode: product.code,
@@ -617,7 +617,7 @@ export default function BOMPage() {
                   ) : (
                     editingItems.map((item) => {
                       const routingInfo = getRoutingInfo();
-                      const selectedMaterial = activeMaterials.find(m => m.code === item.materialCode);
+                      const selectedMaterial = activeMaterials.find((m: Material) => m.code === item.materialCode);
                       
                       return (
                         <tr key={item.id} className="hover:bg-gray-50">

@@ -6,14 +6,14 @@
 // 공통 타입
 // ====================================
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
   error?: string;
 }
 
-export interface PaginatedResponse<T = any> {
+export interface PaginatedResponse<T = unknown> {
   success: boolean;
   data: T[];
   total: number;
@@ -185,7 +185,7 @@ export interface OrderSearchParams extends PaginationParams {
 // Server Action 응답 타입
 // ====================================
 
-export interface ActionResponse<T = any> {
+export interface ActionResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -230,7 +230,7 @@ export type SortDirection = 'ASC' | 'DESC';
 export interface FilterCondition {
   field: string;
   operator: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'like' | 'in';
-  value: any;
+  value: unknown;
 }
 
 // SQL 파라미터

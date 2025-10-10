@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       WHERE 1=1
     `;
 
-    const params: Record<string, any> = {};
+    const params: Record<string, string | number | null> = {};
 
     if (status) {
       query += ` AND status = @status`;
@@ -28,9 +28,9 @@ export async function GET(request: NextRequest) {
     const roles = await executeQuery(query, params);
 
     // permissions JSON 파싱
-    const parsedRoles = roles.map((role: any) => ({
+    const parsedRoles = roles.map((role: Record<string, unknown>) => ({
       ...role,
-      permissions: role.permissions ? JSON.parse(role.permissions) : []
+      permissions: typeof role.permissions === 'string' ? JSON.parse(role.permissions) : []
     }));
 
     return NextResponse.json({
@@ -38,12 +38,12 @@ export async function GET(request: NextRequest) {
       data: parsedRoles,
       count: parsedRoles.length,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('역할 조회 에러:', error);
     return NextResponse.json({
       success: false,
       message: '역할 조회 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }
@@ -80,12 +80,12 @@ export async function POST(request: NextRequest) {
       success: true,
       message: '역할이 추가되었습니다',
     }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('역할 추가 에러:', error);
     return NextResponse.json({
       success: false,
       message: '역할 추가 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }
@@ -104,7 +104,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const updateParts: string[] = [];
-    const params: Record<string, any> = { id };
+    const params: Record<string, string | number | null> = { id };
 
     if (name !== undefined) {
       updateParts.push('name = @name');
@@ -144,12 +144,12 @@ export async function PUT(request: NextRequest) {
       success: true,
       message: '역할 정보가 수정되었습니다',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('역할 수정 에러:', error);
     return NextResponse.json({
       success: false,
       message: '역할 수정 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }
@@ -173,12 +173,12 @@ export async function DELETE(request: NextRequest) {
       success: true,
       message: '역할이 삭제되었습니다',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('역할 삭제 에러:', error);
     return NextResponse.json({
       success: false,
       message: '역할 삭제 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }

@@ -30,7 +30,8 @@ export default function EquipmentsPage() {
     purchaseDate: "",
     line: "",
     manager: "",
-    description: ""
+    description: "",
+    status: "active" as const
   });
 
   // Permission check
@@ -69,13 +70,14 @@ export default function EquipmentsPage() {
       purchaseDate: "",
       line: "",
       manager: "",
-      description: ""
+      description: "",
+      status: "active" as const
     });
   };
 
   const handleUpdateEquipment = () => {
     if (!editingEquipment) return;
-    updateEquipment(editingEquipment.id, () => editingEquipment);
+    updateEquipment(editingEquipment.id, editingEquipment);
     setShowEditModal(false);
     setEditingEquipment(null);
     if (selectedEquipment?.id === editingEquipment.id) {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMaterialsStore, type Material, useCustomersStore } from "@/store/dataStore-optimized";
+import { useMaterialsStore, type Material, useCustomersStore, type Customer } from "@/store/dataStore-optimized";
 import { useAuth } from "@/store/authStore";
 import { useRolesStore } from "@/store/dataStore-optimized";
 import * as XLSX from "xlsx";
@@ -13,7 +13,7 @@ export default function MaterialsPage() {
   const { roles } = useRolesStore();
   
   // 공급업체만 필터링
-  const suppliers = customers.filter(c => c.type === "공급업체" && c.status === "active");
+  const suppliers = customers.filter((c: Customer) => c.type === "공급업체" && c.status === "active");
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<"all" | "원자재" | "부자재">("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
@@ -31,6 +31,7 @@ export default function MaterialsPage() {
     supplier: string;
     description: string;
     image: string;
+    status: Material["status"];
   }>({
     code: "",
     name: "",
@@ -40,7 +41,8 @@ export default function MaterialsPage() {
     purchasePrice: 0,
     supplier: "",
     description: "",
-    image: ""
+    image: "",
+    status: "active"
   });
 
   // Permission check
@@ -78,13 +80,14 @@ export default function MaterialsPage() {
       purchasePrice: 0,
       supplier: "",
       description: "",
-      image: ""
+      image: "",
+      status: "active"
     });
   };
 
   const handleUpdateMaterial = () => {
     if (!editingMaterial) return;
-    updateMaterial(editingMaterial.id, () => editingMaterial);
+    updateMaterial(editingMaterial.id, editingMaterial);
     setShowEditModal(false);
     setEditingMaterial(null);
     if (selectedMaterial?.id === editingMaterial.id) {
@@ -424,7 +427,7 @@ export default function MaterialsPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">공급업체 선택</option>
-                    {suppliers.map(supplier => (
+                    {suppliers.map((supplier: Customer) => (
                       <option key={supplier.id} value={supplier.name}>
                         {supplier.name}
                       </option>
@@ -569,7 +572,7 @@ export default function MaterialsPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">공급업체 선택</option>
-                    {suppliers.map(supplier => (
+                    {suppliers.map((supplier: Customer) => (
                       <option key={supplier.id} value={supplier.name}>
                         {supplier.name}
                       </option>

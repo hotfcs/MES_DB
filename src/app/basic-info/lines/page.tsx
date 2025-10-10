@@ -24,7 +24,8 @@ export default function LinesPage() {
     location: "",
     capacity: 0,
     manager: "",
-    description: ""
+    description: "",
+    status: "active" as const
   });
 
   // Permission check
@@ -58,13 +59,14 @@ export default function LinesPage() {
       location: "",
       capacity: 0,
       manager: "",
-      description: ""
+      description: "",
+      status: "active" as const
     });
   };
 
   const handleUpdateLine = () => {
     if (!editingLine) return;
-    updateLine(editingLine.id, () => editingLine);
+    updateLine(editingLine.id, editingLine);
     setShowEditModal(false);
     setEditingLine(null);
     if (selectedLine?.id === editingLine.id) {

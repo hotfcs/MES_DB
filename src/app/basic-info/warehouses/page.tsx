@@ -23,7 +23,8 @@ export default function WarehousesPage() {
     location: "",
     capacity: 0,
     manager: "",
-    description: ""
+    description: "",
+    status: "active" as const
   });
   const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null);
 
@@ -63,7 +64,8 @@ export default function WarehousesPage() {
       location: "",
       capacity: 0,
       manager: "",
-      description: ""
+      description: "",
+      status: "active" as const
     });
     setShowAddModal(false);
   };
@@ -74,7 +76,7 @@ export default function WarehousesPage() {
       alert("창고코드와 창고명은 필수 입력 항목입니다.");
       return;
     }
-    updateWarehouse(editingWarehouse.id, () => editingWarehouse);
+    updateWarehouse(editingWarehouse.id, editingWarehouse);
     setShowEditModal(false);
     setEditingWarehouse(null);
     setSelectedWarehouse(editingWarehouse);

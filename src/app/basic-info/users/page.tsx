@@ -52,7 +52,7 @@ export default function UsersPage() {
     return permissions.includes("USERS_EDIT") || permissions.includes('ALL');
   };
 
-  const filteredUsers = users.filter(user => {
+  const filteredUsers = users.filter((user: User) => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.department.toLowerCase().includes(searchTerm.toLowerCase());
     
@@ -103,7 +103,7 @@ export default function UsersPage() {
       if (!editingUser.account || !editingUser.password || !editingUser.name || !editingUser.role || !editingUser.department) {
         return;
       }
-      updateUser(editingUser);
+      updateUser(editingUser.id, editingUser);
       setEditingUser(null);
       setShowEditModal(false);
       setSelectedUser(editingUser);
@@ -121,7 +121,7 @@ export default function UsersPage() {
     // XLSX 형식으로 엑셀 출력 (필터링된 데이터만)
     const worksheetData = [
       ["사용자계정", "사용자명", "사용자권한", "부서", "직급", "전화번호", "이메일", "사용유무", "마지막 로그인", "입사일", "퇴사일"],
-      ...filteredUsers.map(user => [
+      ...filteredUsers.map((user: User) => [
         user.account,
         user.name,
         user.role,
@@ -245,7 +245,7 @@ export default function UsersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredUsers.map((user) => (
+                {filteredUsers.map((user: User) => (
                   <tr 
                     key={user.id} 
                     className={`hover:bg-gray-50 cursor-pointer ${

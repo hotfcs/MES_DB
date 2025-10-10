@@ -5,9 +5,9 @@ import { getDbConnection, sql } from './db';
  */
 
 // SELECT 쿼리 실행
-export async function executeQuery<T = any>(
+export async function executeQuery<T = Record<string, unknown>>(
   query: string,
-  params?: Record<string, any>
+  params?: Record<string, string | number | boolean | null>
 ): Promise<T[]> {
   try {
     const pool = await getDbConnection();
@@ -31,7 +31,7 @@ export async function executeQuery<T = any>(
 // INSERT/UPDATE/DELETE 쿼리 실행
 export async function executeNonQuery(
   query: string,
-  params?: Record<string, any>
+  params?: Record<string, string | number | boolean | null>
 ): Promise<number> {
   try {
     const pool = await getDbConnection();
@@ -53,9 +53,9 @@ export async function executeNonQuery(
 }
 
 // Stored Procedure 실행
-export async function executeStoredProcedure<T = any>(
+export async function executeStoredProcedure<T = Record<string, unknown>>(
   procedureName: string,
-  params?: Record<string, any>
+  params?: Record<string, string | number | boolean | null>
 ): Promise<T[]> {
   try {
     const pool = await getDbConnection();

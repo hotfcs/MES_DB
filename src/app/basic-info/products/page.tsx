@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useProductsStore, type Product, useCustomersStore } from "@/store/dataStore-optimized";
+import { useProductsStore, type Product, useCustomersStore, type Customer } from "@/store/dataStore-optimized";
 import { useAuth } from "@/store/authStore";
 import { useRolesStore } from "@/store/dataStore-optimized";
 import * as XLSX from "xlsx";
@@ -13,7 +13,7 @@ export default function ProductsPage() {
   const { roles } = useRolesStore();
   
   // 고객사만 필터링
-  const customerList = customers.filter(c => c.type === "고객사" && c.status === "active");
+  const customerList = customers.filter((c: Customer) => c.type === "고객사" && c.status === "active");
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<"all" | "제품" | "반제품" | "상품">("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
@@ -32,6 +32,7 @@ export default function ProductsPage() {
     customer: string;
     description: string;
     image: string;
+    status: Product["status"];
   }>({
     code: "",
     name: "",
@@ -42,7 +43,8 @@ export default function ProductsPage() {
     sellingPrice: 0,
     customer: "",
     description: "",
-    image: ""
+    image: "",
+    status: "active"
   });
 
   // Permission check
@@ -64,7 +66,7 @@ export default function ProductsPage() {
     return permissions.includes("PRODUCTS_EDIT") || permissions.includes('ALL');
   };
 
-  const filteredProducts = products.filter(product => {
+  const filteredProducts = products.filter((product: Product) => {
     const matchesSearch = 
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -88,13 +90,14 @@ export default function ProductsPage() {
       sellingPrice: 0,
       customer: "",
       description: "",
-      image: ""
+      image: "",
+      status: "active"
     });
   };
 
   const handleUpdateProduct = () => {
     if (!editingProduct) return;
-    updateProduct(editingProduct.id, () => editingProduct);
+    updateProduct(editingProduct.id, editingProduct);
     setShowEditModal(false);
     setEditingProduct(null);
     if (selectedProduct?.id === editingProduct.id) {
@@ -113,7 +116,7 @@ export default function ProductsPage() {
   const handleExportExcel = () => {
     const worksheetData = [
       ["제품코드", "제품명", "품목구분", "규격", "단위", "표준원가", "판매단가", "고객사", "설명", "사용유무", "생성일"],
-      ...filteredProducts.map(product => [
+      ...filteredProducts.map((product: Product) => [
         product.code,
         product.name,
         product.category,
@@ -239,7 +242,7 @@ export default function ProductsPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredProducts.map((product) => (
+                  filteredProducts.map((product: Product) => (
                     <tr
                       key={product.id}
                       onClick={() => setSelectedProduct(product)}
@@ -452,7 +455,7 @@ export default function ProductsPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">고객사 선택</option>
-                    {customerList.map(customer => (
+                    {customerList.map((customer: Customer) => (
                       <option key={customer.id} value={customer.name}>
                         {customer.name}
                       </option>
@@ -607,7 +610,7 @@ export default function ProductsPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">고객사 선택</option>
-                    {customerList.map(customer => (
+                    {customerList.map((customer: Customer) => (
                       <option key={customer.id} value={customer.name}>
                         {customer.name}
                       </option>

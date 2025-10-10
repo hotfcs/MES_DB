@@ -20,11 +20,11 @@ export async function getUsers(): Promise<ActionResponse<User[]>> {
       success: true,
       data: users,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('사용자 조회 에러:', error);
     return {
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -51,11 +51,11 @@ export async function addUser(formData: FormData): Promise<ActionResponse> {
     revalidatePath('/examples/azure-sql-server-actions');
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('사용자 추가 에러:', error);
     return {
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -68,11 +68,11 @@ export async function deleteUser(id: number): Promise<ActionResponse> {
     revalidatePath('/examples/azure-sql-server-actions');
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('사용자 삭제 에러:', error);
     return {
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -94,11 +94,11 @@ export async function searchUsers(searchTerm: string): Promise<ActionResponse<Us
       success: true,
       data: users,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('사용자 검색 에러:', error);
     return {
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }

@@ -49,8 +49,8 @@ export default function AzureSqlApiPage() {
       } else {
         setError(data.message);
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
@@ -82,8 +82,8 @@ export default function AzureSqlApiPage() {
       } else {
         alert('추가 실패: ' + data.message);
       }
-    } catch (err: any) {
-      alert('추가 실패: ' + err.message);
+    } catch (err: unknown) {
+      alert('추가 실패: ' + (err instanceof Error ? err.message : 'Unknown error'));
     }
   };
 
@@ -104,8 +104,8 @@ export default function AzureSqlApiPage() {
       } else {
         alert('삭제 실패: ' + data.message);
       }
-    } catch (err: any) {
-      alert('삭제 실패: ' + err.message);
+    } catch (err: unknown) {
+      alert('삭제 실패: ' + (err instanceof Error ? err.message : 'Unknown error'));
     }
   };
 
@@ -133,8 +133,8 @@ export default function AzureSqlApiPage() {
       } else {
         setError(data.message);
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
     }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useProductionPlansStore, type ProductionPlan, useProductsStore } from "@/store/dataStore-optimized";
+import { useProductionPlansStore, type ProductionPlan, useProductsStore, type Product } from "@/store/dataStore-optimized";
 import { useAuth } from "@/store/authStore";
 import { useRolesStore } from "@/store/dataStore-optimized";
 import * as XLSX from "xlsx";
@@ -36,7 +36,7 @@ export default function ProductionPlanPage() {
   const [editingPlan, setEditingPlan] = useState<ProductionPlan | null>(null);
 
   // Get active options
-  const activeProducts = products.filter(p => p.status === "active");
+  const activeProducts = products.filter((p: Product) => p.status === "active");
 
   // Permission check
   const getUserPermissions = () => {
@@ -59,7 +59,7 @@ export default function ProductionPlanPage() {
 
   const filteredPlans = productionPlans.filter(plan => {
     // Get customer for the product
-    const product = products.find(p => p.code === plan.productCode);
+    const product = products.find((p: Product) => p.code === plan.productCode);
     const customerName = product?.customer || "";
     
     const matchesSearch = 
@@ -72,7 +72,7 @@ export default function ProductionPlanPage() {
 
   const handleProductSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const productCode = e.target.value;
-    const product = activeProducts.find(p => p.code === productCode);
+    const product = activeProducts.find((p: Product) => p.code === productCode);
     if (product) {
       setNewPlan({
         ...newPlan,
@@ -86,7 +86,7 @@ export default function ProductionPlanPage() {
   const handleProductSelectEdit = (e: React.ChangeEvent<HTMLSelectElement>) => {
     if (!editingPlan) return;
     const productCode = e.target.value;
-    const product = activeProducts.find(p => p.code === productCode);
+    const product = activeProducts.find((p: Product) => p.code === productCode);
     if (product) {
       setEditingPlan({
         ...editingPlan,
@@ -139,7 +139,7 @@ export default function ProductionPlanPage() {
       alert("제품, 시작일, 종료일은 필수 입력 항목입니다.");
       return;
     }
-    updateProductionPlan(editingPlan.id, () => editingPlan);
+    updateProductionPlan(editingPlan);
     setShowEditModal(false);
     setEditingPlan(null);
     setSelectedPlan(editingPlan);
@@ -158,7 +158,7 @@ export default function ProductionPlanPage() {
 
   const handleExportExcel = () => {
     const exportData = filteredPlans.map(plan => {
-      const product = products.find(p => p.code === plan.productCode);
+      const product = products.find((p: Product) => p.code === plan.productCode);
       const customerName = product?.customer || "-";
       
       return {
@@ -290,7 +290,7 @@ export default function ProductionPlanPage() {
                 ) : (
                   filteredPlans.map((plan) => {
                     // Get customer for the product
-                    const product = products.find(p => p.code === plan.productCode);
+                    const product = products.find((p: Product) => p.code === plan.productCode);
                     const customerName = product?.customer || "-";
                     
                     return (
@@ -371,7 +371,7 @@ export default function ProductionPlanPage() {
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">거래처</label>
-                <p className="text-sm mt-1">{products.find(p => p.code === selectedPlan.productCode)?.customer || "-"}</p>
+                <p className="text-sm mt-1">{products.find((p: Product) => p.code === selectedPlan.productCode)?.customer || "-"}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">계획수량</label>
@@ -443,7 +443,7 @@ export default function ProductionPlanPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">제품 선택</option>
-                    {activeProducts.map(product => (
+                    {activeProducts.map((product: Product) => (
                       <option key={product.id} value={product.code}>
                         {product.code} - {product.name}
                       </option>
@@ -564,7 +564,7 @@ export default function ProductionPlanPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">제품 선택</option>
-                    {activeProducts.map(product => (
+                    {activeProducts.map((product: Product) => (
                       <option key={product.id} value={product.code}>
                         {product.code} - {product.name}
                       </option>

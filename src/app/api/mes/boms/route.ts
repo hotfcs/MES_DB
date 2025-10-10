@@ -39,9 +39,9 @@ export async function GET() {
       data: { boms: bomsRaw, bomItems: itemsRaw },
       count: bomsRaw.length 
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('BOM 조회 에러:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
 }
 
@@ -56,8 +56,8 @@ export async function POST(request: NextRequest) {
       { productCode, productName, routingId: routingId || null, routingName: routingName || '', revision: revision || 'V1.0', status }
     );
     return NextResponse.json({ success: true }, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
 }
 
@@ -67,8 +67,8 @@ export async function DELETE(request: NextRequest) {
     if (!id) return NextResponse.json({ success: false }, { status: 400 });
     await executeNonQuery('DELETE FROM boms WHERE id = @id', { id: parseInt(id) });
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
 }
 

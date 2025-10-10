@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
       WHERE 1=1
     `;
 
-    const params: Record<string, any> = {};
+    const params: Record<string, string | number> = {};
 
     if (status) {
       query += ` AND status = @status`;
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
       search ? " AND (name LIKE @search + '%' OR account LIKE @search + '%')" : ''
     }`;
 
-    const [countResult] = await executeQuery(countQuery, params);
+    const [countResult] = await executeQuery<{ total: number }>(countQuery, params);
     const total = countResult.total;
 
     query += ` ORDER BY created_at DESC OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`;
@@ -90,12 +90,12 @@ export async function GET(request: NextRequest) {
       page,
       totalPages: Math.ceil(total / limit),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('사용자 조회 에러:', error);
     return NextResponse.json({
       success: false,
       message: '사용자 조회 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }
@@ -154,12 +154,12 @@ export async function POST(request: NextRequest) {
       success: true,
       message: '사용자가 추가되었습니다',
     }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('사용자 추가 에러:', error);
     return NextResponse.json({
       success: false,
       message: '사용자 추가 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }
@@ -183,13 +183,13 @@ export async function PUT(request: NextRequest) {
     ];
 
     const updateParts: string[] = [];
-    const params: Record<string, any> = { id };
+    const params: Record<string, string | number | null> = { id };
 
     Object.entries(updates).forEach(([key, value]) => {
       const dbKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
       if (allowedFields.includes(dbKey)) {
         updateParts.push(`${dbKey} = @${key}`);
-        params[key] = value;
+        params[key] = value as string | number | null;
       }
     });
 
@@ -215,12 +215,12 @@ export async function PUT(request: NextRequest) {
       message: '사용자 정보가 수정되었습니다',
       rowsAffected,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('사용자 수정 에러:', error);
     return NextResponse.json({
       success: false,
       message: '사용자 수정 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }
@@ -246,12 +246,12 @@ export async function DELETE(request: NextRequest) {
       message: '사용자가 삭제되었습니다',
       rowsAffected,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('사용자 삭제 에러:', error);
     return NextResponse.json({
       success: false,
       message: '사용자 삭제 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }

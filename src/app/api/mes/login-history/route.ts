@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       WHERE 1=1
     `;
 
-    const params: Record<string, any> = { limit: parseInt(limit) };
+    const params: Record<string, string | number | null> = { limit: parseInt(limit) };
 
     if (userId) {
       query += ` AND user_id = @userId`;
@@ -56,12 +56,12 @@ export async function GET(request: NextRequest) {
       data: history,
       count: history.length,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('로그인 이력 조회 에러:', error);
     return NextResponse.json({
       success: false,
       message: '로그인 이력 조회 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }
