@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useWarehousesStore, type Warehouse } from "@/store/dataStore";
+import { useWarehousesStore, type Warehouse } from "@/store/dataStore-optimized";
 import { useAuth } from "@/store/authStore";
-import { useRolesStore } from "@/store/dataStore";
+import { useRolesStore } from "@/store/dataStore-optimized";
 import * as XLSX from "xlsx";
 
 export default function WarehousesPage() {
@@ -231,7 +231,7 @@ export default function WarehousesPage() {
                       <td className="px-4 py-3 text-sm font-medium">{warehouse.name}</td>
                       <td className="px-4 py-3 text-sm">{warehouse.type}</td>
                       <td className="px-4 py-3 text-sm">{warehouse.location}</td>
-                      <td className="px-4 py-3 text-sm text-right">{warehouse.capacity.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-sm text-right">{warehouse.capacity ? warehouse.capacity.toLocaleString() : '0'}</td>
                       <td className="px-4 py-3 text-sm">{warehouse.manager}</td>
                       <td className="px-4 py-3 text-sm">
                         <span
@@ -281,7 +281,7 @@ export default function WarehousesPage() {
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">보관용량(㎡)</label>
-                <p className="text-sm mt-1">{selectedWarehouse.capacity.toLocaleString()}</p>
+                <p className="text-sm mt-1">{selectedWarehouse.capacity ? selectedWarehouse.capacity.toLocaleString() : '0'}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">담당자</label>

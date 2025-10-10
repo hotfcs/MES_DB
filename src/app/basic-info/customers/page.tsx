@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useCustomersStore, type Customer } from "@/store/dataStore";
+import { useCustomersStore, type Customer } from "@/store/dataStore-optimized";
 import { useAuth } from "@/store/authStore";
-import { useRolesStore } from "@/store/dataStore";
+import { useRolesStore } from "@/store/dataStore-optimized";
 import * as XLSX from "xlsx";
 
 export default function CustomersPage() {
@@ -44,13 +44,20 @@ export default function CustomersPage() {
   // Permission check
   const getUserPermissions = () => {
     if (!currentUser) return [];
+    if (currentUser.role === '시스템관리자' || currentUser.role === '관리자' || currentUser.role === 'admin') {
+      return ['ALL'];
+    }
     const userRole = roles.find(r => r.name === currentUser.role);
     return userRole?.permissions || [];
   };
 
   const hasEditPermission = () => {
+    if (!currentUser) return false;
+    if (currentUser.role === '시스템관리자' || currentUser.role === '관리자' || currentUser.role === 'admin') {
+      return true;
+    }
     const permissions = getUserPermissions();
-    return permissions.includes("CUSTOMERS_EDIT");
+    return permissions.includes("CUSTOMERS_EDIT") || permissions.includes('ALL');
   };
 
   const filteredCustomers = customers.filter(customer => {
@@ -83,7 +90,7 @@ export default function CustomersPage() {
 
   const handleUpdateCustomer = () => {
     if (!editingCustomer) return;
-    updateCustomer(editingCustomer.id, () => editingCustomer);
+    updateCustomer(editingCustomer.id, editingCustomer);
     setShowEditModal(false);
     setEditingCustomer(null);
     if (selectedCustomer?.id === editingCustomer.id) {

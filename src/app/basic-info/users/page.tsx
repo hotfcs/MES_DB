@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import * as XLSX from 'xlsx';
-import { useUsersStore, useDepartmentsStore, useRolesStore, User } from "@/store/dataStore";
+import { useUsersStore, useDepartmentsStore, useRolesStore, User } from "@/store/dataStore-optimized";
 import { useAuth } from "@/store/authStore";
 
 export default function UsersPage() {
@@ -34,13 +34,22 @@ export default function UsersPage() {
   // Check user permissions
   const getUserPermissions = () => {
     if (!currentUser) return [];
+    // 시스템관리자는 모든 권한
+    if (currentUser.role === '시스템관리자' || currentUser.role === '관리자' || currentUser.role === 'admin') {
+      return ['ALL'];
+    }
     const userRole = roles.find(role => role.name === currentUser.role);
     return userRole ? userRole.permissions : [];
   };
 
   const hasEditPermission = () => {
+    if (!currentUser) return false;
+    // 시스템관리자는 모든 권한
+    if (currentUser.role === '시스템관리자' || currentUser.role === '관리자' || currentUser.role === 'admin') {
+      return true;
+    }
     const permissions = getUserPermissions();
-    return permissions.includes("USERS_EDIT");
+    return permissions.includes("USERS_EDIT") || permissions.includes('ALL');
   };
 
   const filteredUsers = users.filter(user => {

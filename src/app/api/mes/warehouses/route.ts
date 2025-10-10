@@ -1,0 +1,63 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { executeQuery, executeNonQuery } from '@/lib/db-queries';
+
+export async function GET() {
+  try {
+    const query = `
+      SELECT 
+        id, code, name, type, location, capacity, manager, description, status, 
+        created_at as createdAt, 
+        modified_at as modifiedAt 
+      FROM warehouses 
+      ORDER BY created_at DESC
+    `;
+    const warehouses = await executeQuery(query);
+    return NextResponse.json({ success: true, data: warehouses, count: warehouses.length });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const { code, name, type, location, capacity, manager, description, status = 'active' } = await request.json();
+    if (!code || !name || !type) return NextResponse.json({ success: false, message: '필수 항목 누락' }, { status: 400 });
+    
+    await executeNonQuery(
+      `INSERT INTO warehouses (code, name, type, location, capacity, manager, description, status, created_at) 
+       VALUES (@code, @name, @type, @location, @capacity, @manager, @description, @status, GETDATE())`,
+      { code, name, type, location: location || '', capacity: capacity || 0, manager: manager || '', description: description || '', status }
+    );
+    return NextResponse.json({ success: true }, { status: 201 });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const { id, ...updates } = await request.json();
+    if (!id) return NextResponse.json({ success: false }, { status: 400 });
+
+    const fields = ['name', 'type', 'location', 'capacity', 'manager', 'description', 'status'];
+    const setParts = Object.keys(updates).filter(k => fields.includes(k)).map(k => `${k} = @${k}`);
+    if (setParts.length === 0) return NextResponse.json({ success: false }, { status: 400 });
+
+    await executeNonQuery(`UPDATE warehouses SET ${setParts.join(', ')}, modified_at = GETDATE() WHERE id = @id`, { id, ...updates });
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const id = request.nextUrl.searchParams.get('id');
+    if (!id) return NextResponse.json({ success: false }, { status: 400 });
+    await executeNonQuery('DELETE FROM warehouses WHERE id = @id', { id: parseInt(id) });
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+

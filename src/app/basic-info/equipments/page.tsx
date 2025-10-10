@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useEquipmentsStore, type Equipment, useLinesStore } from "@/store/dataStore";
+import { useEquipmentsStore, type Equipment, useLinesStore } from "@/store/dataStore-optimized";
 import { useAuth } from "@/store/authStore";
-import { useRolesStore } from "@/store/dataStore";
+import { useRolesStore } from "@/store/dataStore-optimized";
 import * as XLSX from "xlsx";
 
 export default function EquipmentsPage() {

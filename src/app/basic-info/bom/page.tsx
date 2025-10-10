@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useBOMsStore, type BOM, type BOMItem, useProductsStore, useMaterialsStore, useRoutingsStore } from "@/store/dataStore";
+import { useBOMsStore, type BOM, type BOMItem, useProductsStore, useMaterialsStore, useRoutingsStore } from "@/store/dataStore-optimized";
 import { useAuth } from "@/store/authStore";
-import { useRolesStore } from "@/store/dataStore";
+import { useRolesStore } from "@/store/dataStore-optimized";
 import * as XLSX from "xlsx";
 
 export default function BOMPage() {

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import * as XLSX from 'xlsx';
-import { useLoginHistoryStore, useUsersStore } from "@/store/dataStore";
+import { useLoginHistoryStore, useUsersStore } from "@/store/dataStore-optimized";
 
 export default function LoginHistoryPage() {
   const { loginHistory } = useLoginHistoryStore();

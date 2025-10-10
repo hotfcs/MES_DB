@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useMaterialsStore, type Material, useCustomersStore } from "@/store/dataStore";
+import { useMaterialsStore, type Material, useCustomersStore } from "@/store/dataStore-optimized";
 import { useAuth } from "@/store/authStore";
-import { useRolesStore } from "@/store/dataStore";
+import { useRolesStore } from "@/store/dataStore-optimized";
 import * as XLSX from "xlsx";
 
 export default function MaterialsPage() {
@@ -248,7 +248,7 @@ export default function MaterialsPage() {
                       <td className="px-4 py-3 text-sm">{material.specification}</td>
                       <td className="px-4 py-3 text-sm">{material.unit}</td>
                       <td className="px-4 py-3 text-sm">{material.supplier}</td>
-                      <td className="px-4 py-3 text-sm text-right">{material.purchasePrice.toLocaleString()}원</td>
+                      <td className="px-4 py-3 text-sm text-right">{material.purchasePrice ? material.purchasePrice.toLocaleString() : '0'}원</td>
                       <td className="px-4 py-3 text-sm">
                         <span
                           className={`px-2 py-1 rounded text-xs ${
@@ -314,7 +314,7 @@ export default function MaterialsPage() {
                 </div>
                 <div className="col-span-2">
                   <label className="text-sm font-medium text-gray-700">구매단가</label>
-                  <p className="text-sm mt-1">{selectedMaterial.purchasePrice.toLocaleString()}원</p>
+                  <p className="text-sm mt-1">{selectedMaterial.purchasePrice ? selectedMaterial.purchasePrice.toLocaleString() : '0'}원</p>
                 </div>
                 <div className="col-span-2">
                   <label className="text-sm font-medium text-gray-700">공급업체</label>

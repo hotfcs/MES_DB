@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useLinesStore, type Line, useProcessesStore, useEquipmentsStore } from "@/store/dataStore";
+import { useLinesStore, type Line, useProcessesStore, useEquipmentsStore } from "@/store/dataStore-optimized";
 import { useAuth } from "@/store/authStore";
-import { useRolesStore } from "@/store/dataStore";
+import { useRolesStore } from "@/store/dataStore-optimized";
 import * as XLSX from "xlsx";
 
 export default function LinesPage() {
@@ -205,7 +205,7 @@ export default function LinesPage() {
                       <td className="px-4 py-3 text-sm">{line.code}</td>
                       <td className="px-4 py-3 text-sm font-medium">{line.name}</td>
                       <td className="px-4 py-3 text-sm">{line.location}</td>
-                      <td className="px-4 py-3 text-sm text-right">{line.capacity.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-sm text-right">{line.capacity ? line.capacity.toLocaleString() : '0'}</td>
                       <td className="px-4 py-3 text-sm">{line.manager}</td>
                       <td className="px-4 py-3 text-sm">
                         <span

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useWorkOrdersStore, type WorkOrder, useProductionPlansStore, type ProductionPlan, useProductsStore, useLinesStore, useBOMsStore, useRoutingsStore, useMaterialsStore } from "@/store/dataStore";
+import { useWorkOrdersStore, type WorkOrder, useProductionPlansStore, type ProductionPlan, useProductsStore, useLinesStore, useBOMsStore, useRoutingsStore, useMaterialsStore } from "@/store/dataStore-optimized";
 import { useAuth } from "@/store/authStore";
-import { useRolesStore } from "@/store/dataStore";
+import { useRolesStore } from "@/store/dataStore-optimized";
 import * as XLSX from "xlsx";
 
 // Helper function to check and update plan status based on work orders
@@ -84,13 +84,20 @@ export default function WorkOrderPage() {
   // Permission check
   const getUserPermissions = () => {
     if (!currentUser) return [];
+    if (currentUser.role === '시스템관리자' || currentUser.role === '관리자' || currentUser.role === 'admin') {
+      return ['ALL'];
+    }
     const userRole = roles.find(r => r.name === currentUser.role);
     return userRole?.permissions || [];
   };
 
   const hasEditPermission = () => {
+    if (!currentUser) return false;
+    if (currentUser.role === '시스템관리자' || currentUser.role === '관리자' || currentUser.role === 'admin') {
+      return true;
+    }
     const permissions = getUserPermissions();
-    return permissions.includes("WORK_ORDER_EDIT");
+    return permissions.includes("WORK_ORDER_EDIT") || permissions.includes('ALL');
   };
 
   // Filter plans: exclude plans with end date before today
@@ -101,7 +108,7 @@ export default function WorkOrderPage() {
     const customerName = product?.customer || "";
     
     const matchesSearch = 
-      plan.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (plan.productName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
       customerName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = planStatusFilter === "all" || plan.status === planStatusFilter;
     const notExpired = plan.endDate >= today; // Exclude plans with end date before today
@@ -120,7 +127,7 @@ export default function WorkOrderPage() {
     const customerName = product?.customer || "";
     
     const matchesSearch = 
-      order.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (order.productName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
       customerName.toLowerCase().includes(searchTerm.toLowerCase());
     
     return matchesSearch;
@@ -511,7 +518,7 @@ export default function WorkOrderPage() {
                           <td className="px-3 py-2 text-xs">{step.line}</td>
                           <td className="px-3 py-2 text-xs font-medium">{step.process}</td>
                           <td className="px-3 py-2 text-xs">{step.mainEquipment}</td>
-                          <td className="px-3 py-2 text-xs text-right">{selectedOrder.orderQuantity.toLocaleString()} {selectedOrder.unit}</td>
+                          <td className="px-3 py-2 text-xs text-right">{selectedOrder.orderQuantity ? selectedOrder.orderQuantity.toLocaleString() : '0'} {selectedOrder.unit}</td>
                           <td className="px-3 py-2 text-xs text-right">{step.standardManHours}h</td>
                         </tr>
                       ))
@@ -577,7 +584,7 @@ export default function WorkOrderPage() {
                       >
                         <td className="px-3 py-2 text-xs">{order.orderCode}</td>
                         <td className="px-3 py-2 text-xs font-medium">{order.productName}</td>
-                        <td className="px-3 py-2 text-xs text-right">{order.orderQuantity.toLocaleString()} {order.unit}</td>
+                        <td className="px-3 py-2 text-xs text-right">{order.orderQuantity ? order.orderQuantity.toLocaleString() : '0'} {order.unit}</td>
                         <td className="px-3 py-2 text-xs text-right">
                           <span className={resultQuantity > 0 ? "text-green-600 font-medium" : "text-gray-400"}>
                             {resultQuantity.toLocaleString()} {order.unit}

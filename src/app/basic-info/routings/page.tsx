@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRoutingsStore, type Routing, type RoutingStep, useLinesStore, useProcessesStore, useEquipmentsStore } from "@/store/dataStore";
+import { useRoutingsStore, type Routing, type RoutingStep, useLinesStore, useProcessesStore, useEquipmentsStore } from "@/store/dataStore-optimized";
 import { useAuth } from "@/store/authStore";
-import { useRolesStore } from "@/store/dataStore";
+import { useRolesStore } from "@/store/dataStore-optimized";
 import * as XLSX from "xlsx";
 
 export default function RoutingsPage() {

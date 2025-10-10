@@ -75,7 +75,20 @@ export default function Sidebar({ isVisible }: SidebarProps) {
 
   // Check if user has permission for a menu item
   const hasPermission = (permissionCode: string) => {
+    if (!user) return false;
+    
+    // 관리자 또는 시스템관리자는 모든 권한 허용
+    if (user.role === '시스템관리자' || user.role === '관리자' || user.role === 'admin') {
+      return true;
+    }
+    
     const permissions = getUserPermissions();
+    
+    // roles가 비어있으면 (DB에서 아직 로드 안됨) 모든 권한 허용
+    if (roles.length === 0) {
+      return true;
+    }
+    
     return permissions.includes(`${permissionCode}_VIEW`) || permissions.includes(`${permissionCode}_EDIT`);
   };
 

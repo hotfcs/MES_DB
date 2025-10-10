@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useProductionPlansStore, type ProductionPlan, useProductsStore } from "@/store/dataStore";
+import { useProductionPlansStore, type ProductionPlan, useProductsStore } from "@/store/dataStore-optimized";
 import { useAuth } from "@/store/authStore";
-import { useRolesStore } from "@/store/dataStore";
+import { useRolesStore } from "@/store/dataStore-optimized";
 import * as XLSX from "xlsx";
 
 export default function ProductionPlanPage() {
@@ -41,13 +41,20 @@ export default function ProductionPlanPage() {
   // Permission check
   const getUserPermissions = () => {
     if (!currentUser) return [];
+    if (currentUser.role === '시스템관리자' || currentUser.role === '관리자' || currentUser.role === 'admin') {
+      return ['ALL'];
+    }
     const userRole = roles.find(r => r.name === currentUser.role);
     return userRole?.permissions || [];
   };
 
   const hasEditPermission = () => {
+    if (!currentUser) return false;
+    if (currentUser.role === '시스템관리자' || currentUser.role === '관리자' || currentUser.role === 'admin') {
+      return true;
+    }
     const permissions = getUserPermissions();
-    return permissions.includes("PRODUCTION_PLAN_EDIT");
+    return permissions.includes("PRODUCTION_PLAN_EDIT") || permissions.includes('ALL');
   };
 
   const filteredPlans = productionPlans.filter(plan => {
@@ -56,7 +63,7 @@ export default function ProductionPlanPage() {
     const customerName = product?.customer || "";
     
     const matchesSearch = 
-      plan.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (plan.productName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
       customerName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || plan.status === statusFilter;
     const matchesDate = !dateFilter || plan.planDate === dateFilter;
@@ -298,7 +305,7 @@ export default function ProductionPlanPage() {
                         <td className="px-4 py-3 text-sm">{plan.planDate}</td>
                         <td className="px-4 py-3 text-sm font-medium">{plan.productName}</td>
                         <td className="px-4 py-3 text-sm">{customerName}</td>
-                        <td className="px-4 py-3 text-sm text-right">{plan.planQuantity.toLocaleString()} {plan.unit}</td>
+                        <td className="px-4 py-3 text-sm text-right">{plan.planQuantity ? plan.planQuantity.toLocaleString() : '0'} {plan.unit}</td>
                         <td className="px-4 py-3 text-sm">
                           <span
                             className={`px-2 py-1 rounded text-xs ${
@@ -368,7 +375,7 @@ export default function ProductionPlanPage() {
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">계획수량</label>
-                <p className="text-sm mt-1">{selectedPlan.planQuantity.toLocaleString()} {selectedPlan.unit}</p>
+                <p className="text-sm mt-1">{selectedPlan.planQuantity ? selectedPlan.planQuantity.toLocaleString() : '0'} {selectedPlan.unit}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-700">시작일</label>

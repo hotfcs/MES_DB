@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import * as XLSX from 'xlsx';
-import { useDepartmentsStore, useRolesStore, Department } from "@/store/dataStore";
+import { useDepartmentsStore, useRolesStore, Department } from "@/store/dataStore-optimized";
 import { useAuth } from "@/store/authStore";
 
 export default function DepartmentsPage() {
@@ -26,13 +26,20 @@ export default function DepartmentsPage() {
   // Check user permissions
   const getUserPermissions = () => {
     if (!currentUser) return [];
+    if (currentUser.role === '시스템관리자' || currentUser.role === '관리자' || currentUser.role === 'admin') {
+      return ['ALL'];
+    }
     const userRole = roles.find(role => role.name === currentUser.role);
     return userRole ? userRole.permissions : [];
   };
 
   const hasEditPermission = () => {
+    if (!currentUser) return false;
+    if (currentUser.role === '시스템관리자' || currentUser.role === '관리자' || currentUser.role === 'admin') {
+      return true;
+    }
     const permissions = getUserPermissions();
-    return permissions.includes("DEPARTMENTS_EDIT");
+    return permissions.includes("DEPARTMENTS_EDIT") || permissions.includes('ALL');
   };
 
   const filteredDepartments = departments.filter(dept => {

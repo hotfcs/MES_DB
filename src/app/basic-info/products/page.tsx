@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useProductsStore, type Product, useCustomersStore } from "@/store/dataStore";
+import { useProductsStore, type Product, useCustomersStore } from "@/store/dataStore-optimized";
 import { useAuth } from "@/store/authStore";
-import { useRolesStore } from "@/store/dataStore";
+import { useRolesStore } from "@/store/dataStore-optimized";
 import * as XLSX from "xlsx";
 
 export default function ProductsPage() {
@@ -48,13 +48,20 @@ export default function ProductsPage() {
   // Permission check
   const getUserPermissions = () => {
     if (!currentUser) return [];
+    if (currentUser.role === '시스템관리자' || currentUser.role === '관리자' || currentUser.role === 'admin') {
+      return ['ALL'];
+    }
     const userRole = roles.find(r => r.name === currentUser.role);
     return userRole?.permissions || [];
   };
 
   const hasEditPermission = () => {
+    if (!currentUser) return false;
+    if (currentUser.role === '시스템관리자' || currentUser.role === '관리자' || currentUser.role === 'admin') {
+      return true;
+    }
     const permissions = getUserPermissions();
-    return permissions.includes("PRODUCTS_EDIT");
+    return permissions.includes("PRODUCTS_EDIT") || permissions.includes('ALL');
   };
 
   const filteredProducts = products.filter(product => {
@@ -254,7 +261,7 @@ export default function ProductsPage() {
                       <td className="px-4 py-3 text-sm">{product.specification}</td>
                       <td className="px-4 py-3 text-sm">{product.unit}</td>
                       <td className="px-4 py-3 text-sm">{product.customer}</td>
-                      <td className="px-4 py-3 text-sm text-right">{product.sellingPrice.toLocaleString()}원</td>
+                      <td className="px-4 py-3 text-sm text-right">{product.sellingPrice ? product.sellingPrice.toLocaleString() : '0'}원</td>
                       <td className="px-4 py-3 text-sm">
                         <span
                           className={`px-2 py-1 rounded text-xs ${
@@ -320,11 +327,11 @@ export default function ProductsPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700">표준원가</label>
-                  <p className="text-sm mt-1">{selectedProduct.standardCost.toLocaleString()}원</p>
+                  <p className="text-sm mt-1">{selectedProduct.standardCost ? selectedProduct.standardCost.toLocaleString() : '0'}원</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-700">판매단가</label>
-                  <p className="text-sm mt-1">{selectedProduct.sellingPrice.toLocaleString()}원</p>
+                  <p className="text-sm mt-1">{selectedProduct.sellingPrice ? selectedProduct.sellingPrice.toLocaleString() : '0'}원</p>
                 </div>
                 <div className="col-span-2">
                   <label className="text-sm font-medium text-gray-700">고객사</label>
