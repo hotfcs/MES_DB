@@ -86,6 +86,7 @@ class AuthStore {
   }
 
   getSnapshot() {
+    this.initialize();
     return this.state;
   }
 
