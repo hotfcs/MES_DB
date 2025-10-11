@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       { productCode, productName, routingId: routingId || null, routingName: routingName || '', revision: revision || 'V1.0', status }
     );
     
-    const newBomId = result[0]?.id;
+    const newBomId = result[0]?.id as number;
     
     // Step 2: Copy routing steps as snapshot if routingId is provided
     if (routingId && newBomId) {
