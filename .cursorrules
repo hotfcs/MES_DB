@@ -51,9 +51,124 @@ catch (error: unknown) {
 - `<img>` 태그 대신 `next/image`의 `<Image />` 컴포넌트를 사용하세요
 - 이미지에는 항상 `width`, `height` 또는 `fill` prop을 지정하세요
 
+## Array 메소드 콜백 타입 명시
+
+배열 메소드(`.some()`, `.map()`, `.filter()` 등)의 콜백에서는 암시적 `any` 타입을 방지하기 위해 명시적으로 타입을 지정하세요.
+
+```typescript
+// ❌ 나쁜 예
+users.some(u => u.account === value)
+products.filter(p => p.status === 'active')
+
+// ✅ 좋은 예
+users.some((u: User) => u.account === value)
+products.filter((p: Product) => p.status === 'active')
+```
+
+## unknown 타입 변수 처리
+
+`unknown` 타입의 변수를 사용할 때는 반드시 타입 단언을 사용하세요.
+
+```typescript
+// ❌ 나쁜 예
+const validateField = (field: string, value: unknown) => {
+  if (!value?.trim()) { } // 에러: Property 'trim' does not exist on type '{}'
+}
+
+// ✅ 좋은 예
+const validateField = (field: string, value: unknown) => {
+  const stringValue = value as string;
+  if (!stringValue?.trim()) { }
+}
+```
+
+## 데이터베이스 쿼리 결과 타입 단언
+
+`executeQuery`의 결과는 `unknown` 타입이므로 사용 전에 타입 단언이 필요합니다.
+
+```typescript
+// ❌ 나쁜 예
+const result = await executeQuery('SELECT id FROM table');
+const id = result[0]?.id; // 타입이 {} 로 추론됨
+
+// ✅ 좋은 예 (Option 1: 간단한 단언)
+const result = await executeQuery('SELECT id FROM table');
+const id = result[0]?.id as number;
+
+// ✅ 좋은 예 (Option 2: 인터페이스 정의)
+interface QueryResult {
+  id: number;
+  name: string;
+}
+const result = await executeQuery('SELECT id, name FROM table');
+const items = result as unknown as QueryResult[];
+for (const item of items) {
+  console.log(item.id, item.name);
+}
+```
+
+## React Hooks 의존성 배열
+
+`useEffect`, `useCallback`, `useMemo` 등의 의존성 배열은 완전하게 작성하세요.
+
+```typescript
+// ❌ 나쁜 예
+useEffect(() => {
+  const items = getItemsById(selectedId);
+  setItems(items);
+}, [selectedId]); // getItemsById 누락
+
+// ✅ 좋은 예
+useEffect(() => {
+  const items = getItemsById(selectedId);
+  setItems(items);
+}, [selectedId, getItemsById]);
+```
+
+## 모듈 Export 명명
+
+익명 default export 대신 명명된 상수를 먼저 선언하세요.
+
+```typescript
+// ❌ 나쁜 예
+export default {
+  useStore1,
+  useStore2
+};
+
+// ✅ 좋은 예
+const storeHooks = {
+  useStore1,
+  useStore2
+};
+
+export default storeHooks;
+```
+
+## Next.js 이미지 원격 도메인 설정
+
+외부 이미지(Azure Blob Storage 등)를 사용할 때는 `next.config.ts`에 도메인을 추가하세요.
+
+```typescript
+// next.config.ts
+const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.blob.core.windows.net',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
+};
+```
+
 ## 기타 규칙
 
 - 사용하지 않는 변수는 선언하지 마세요
 - 사용하지 않는 import는 제거하세요
 - ESLint 경고를 무시하지 말고 수정하세요
+- 불필요한 state 설정 함수 호출은 제거하세요
 
