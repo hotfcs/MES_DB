@@ -336,7 +336,7 @@ async function fetchAPI(url: string, options?: RequestInit) {
   let data;
   try {
     data = JSON.parse(text);
-  } catch (error) {
+  } catch {
     console.error('❌ JSON 파싱 오류:', text.substring(0, 200));
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
@@ -933,7 +933,6 @@ export function useRoutingsStore() {
     return routingSteps.filter(step => step.routingId === routingId);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const saveRoutingSteps = async (routingId: number, steps: RoutingStep[]) => {
     await fetchAPI('/api/mes/routings', {
       method: 'PUT',
@@ -992,7 +991,6 @@ export function useBOMsStore() {
     return bomRoutingSteps.filter(step => step.bomId === bomId);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const saveBOMItems = async (bomId: number, items: BOMItem[]) => {
     await fetchAPI('/api/mes/boms', {
       method: 'PUT',
