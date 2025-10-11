@@ -1,0 +1,59 @@
+# 프로젝트 코딩 규칙
+
+## TypeScript 타입 안전성
+
+### any 타입 금지
+- **절대 `any` 타입을 사용하지 마세요**
+- 타입을 모르는 경우 `unknown`을 사용하세요
+- `unknown`을 사용한 후 타입 가드 또는 타입 단언(type assertion)으로 안전하게 처리하세요
+
+### 에러 핸들링
+```typescript
+// ❌ 나쁜 예
+catch (error: any) {
+  console.error(error.message);
+}
+
+// ✅ 좋은 예
+catch (error: unknown) {
+  console.error((error as Error).message);
+  // 또는
+  if (error instanceof Error) {
+    console.error(error.message);
+  }
+}
+```
+
+### 함수 파라미터
+```typescript
+// ❌ 나쁜 예
+function validate(value: any) { }
+
+// ✅ 좋은 예
+function validate(value: unknown) { }
+```
+
+### SQL 에러 체크
+```typescript
+// ❌ 나쁜 예
+catch (error: any) {
+  if (error?.number === 2627) { }
+}
+
+// ✅ 좋은 예
+catch (error: unknown) {
+  if ((error as { number?: number })?.number === 2627) { }
+}
+```
+
+## Next.js 이미지 최적화
+
+- `<img>` 태그 대신 `next/image`의 `<Image />` 컴포넌트를 사용하세요
+- 이미지에는 항상 `width`, `height` 또는 `fill` prop을 지정하세요
+
+## 기타 규칙
+
+- 사용하지 않는 변수는 선언하지 마세요
+- 사용하지 않는 import는 제거하세요
+- ESLint 경고를 무시하지 말고 수정하세요
+
