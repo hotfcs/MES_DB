@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useMaterialsStore, type Material, useCustomersStore, type Customer } from "@/store/dataStore-optimized";
 import { useAuth } from "@/store/authStore";
 import { useRolesStore } from "@/store/dataStore-optimized";
@@ -384,13 +385,14 @@ export default function MaterialsPage() {
           {selectedMaterial ? (
             <div className="space-y-4">
               {/* 자재 이미지 */}
-              <div className="w-full aspect-square rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+              <div className="w-full aspect-square rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center border-2 border-gray-200 relative">
                 {selectedMaterial.image ? (
-                  <img
+                  <Image
                     key={selectedMaterial.id}
                     src={selectedMaterial.image}
                     alt={selectedMaterial.name}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="400" height="400" fill="%23e5e7eb"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="14">이미지 로드 실패</text></svg>';
@@ -568,16 +570,17 @@ export default function MaterialsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">자재 이미지</label>
                   {newMaterial.image && (
                     <div className="mb-3">
-                      <div className="relative inline-block">
-                        <img
+                      <div className="relative inline-block w-32 h-32">
+                        <Image
                           src={newMaterial.image}
                           alt="자재 이미지"
-                          className="w-32 h-32 rounded-lg object-cover border-2 border-gray-300"
+                          fill
+                          className="rounded-lg object-cover border-2 border-gray-300"
                         />
                         <button
                           type="button"
                           onClick={() => setNewMaterial({ ...newMaterial, image: "" })}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors z-10"
                           title="이미지 삭제"
                         >
                           ×
@@ -728,16 +731,17 @@ export default function MaterialsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">자재 이미지</label>
                   {editingMaterial.image && (
                     <div className="mb-3">
-                      <div className="relative inline-block">
-                        <img
+                      <div className="relative inline-block w-32 h-32">
+                        <Image
                           src={editingMaterial.image}
                           alt="자재 이미지"
-                          className="w-32 h-32 rounded-lg object-cover border-2 border-gray-300"
+                          fill
+                          className="rounded-lg object-cover border-2 border-gray-300"
                         />
                         <button
                           type="button"
                           onClick={() => setEditingMaterial({ ...editingMaterial, image: "" })}
-                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors z-10"
                           title="이미지 삭제"
                         >
                           ×
