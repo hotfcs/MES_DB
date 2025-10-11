@@ -7,7 +7,7 @@ import { useRolesStore } from "@/store/dataStore-optimized";
 import * as XLSX from "xlsx";
 
 export default function BOMPage() {
-  const { boms, bomItems, bomRoutingSteps, addBOM, deleteBOM, saveBOMItems, getBOMItemsByBOMId, getBOMRoutingStepsByBOMId } = useBOMsStore();
+  const { boms, bomItems, addBOM, deleteBOM, saveBOMItems, getBOMItemsByBOMId, getBOMRoutingStepsByBOMId } = useBOMsStore();
   const { products } = useProductsStore();
   const { materials } = useMaterialsStore();
   const { routings, getRoutingStepsByRoutingId } = useRoutingsStore();
