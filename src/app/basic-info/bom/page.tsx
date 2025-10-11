@@ -7,10 +7,10 @@ import { useRolesStore } from "@/store/dataStore-optimized";
 import * as XLSX from "xlsx";
 
 export default function BOMPage() {
-  const { boms, bomItems, bomRoutingSteps, addBOM, updateBOM, deleteBOM, saveBOMItems, getBOMItemsByBOMId, getBOMRoutingStepsByBOMId } = useBOMsStore();
+  const { boms, bomItems, bomRoutingSteps, addBOM, deleteBOM, saveBOMItems, getBOMItemsByBOMId, getBOMRoutingStepsByBOMId } = useBOMsStore();
   const { products } = useProductsStore();
   const { materials } = useMaterialsStore();
-  const { routings, routingSteps, getRoutingStepsByRoutingId } = useRoutingsStore();
+  const { routings, getRoutingStepsByRoutingId } = useRoutingsStore();
   const { user: currentUser } = useAuth();
   const { roles } = useRolesStore();
   
@@ -100,7 +100,7 @@ export default function BOMPage() {
       setOriginalItems([]);
       setSelectedProcessSequence(null);
     }
-  }, [selectedBOM, bomItems]);
+  }, [selectedBOM, bomItems, getBOMItemsByBOMId]);
 
   // Get routing info for selected BOM (from snapshot)
   const getRoutingInfo = () => {
@@ -326,19 +326,6 @@ export default function BOMPage() {
     XLSX.writeFile(workbook, "BOM정보.xlsx");
   };
 
-  const handleProductSelectForBOM = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const productCode = e.target.value;
-    const product = activeProducts.find((p: Product) => p.code === productCode);
-    if (product) {
-      setNewBOM({
-        ...newBOM,
-        productCode: product.code,
-        productName: product.name,
-        routingId: 0,
-        routingName: ""
-      });
-    }
-  };
 
   const handleRoutingSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const routingId = Number(e.target.value);
@@ -744,9 +731,6 @@ export default function BOMPage() {
                       </tr>
                     ) : (
                       editingItems.map((item) => {
-                        const routingInfo = getRoutingInfo();
-                        const selectedMaterial = activeMaterials.find((m: Material) => m.code === item.materialCode);
-                        
                         return (
                           <tr key={item.id} className="hover:bg-gray-50">
                           <td className="px-2 py-2">
