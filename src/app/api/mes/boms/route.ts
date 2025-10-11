@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { executeQuery, executeNonQuery } from '@/lib/db-queries';
 
+interface RoutingStep {
+  sequence: number;
+  line: string;
+  process: string;
+  mainEquipment: string;
+  standardManHours: number;
+  previousProcess: string | null;
+  nextProcess: string | null;
+}
+
 export async function GET() {
   try {
     const bomsRaw = await executeQuery(`
@@ -98,21 +108,21 @@ export async function POST(request: NextRequest) {
       );
       
       // Insert routing steps snapshot for this BOM
-      for (const step of routingSteps) {
-        const stepData = step as Record<string, unknown>;
+      const stepList = routingSteps as RoutingStep[];
+      for (const step of stepList) {
         await executeNonQuery(
           `INSERT INTO bom_routing_steps 
            (bom_id, sequence, line, process, main_equipment, standard_man_hours, previous_process, next_process, created_at) 
            VALUES (@bomId, @sequence, @line, @process, @mainEquipment, @standardManHours, @previousProcess, @nextProcess, GETDATE())`,
           {
             bomId: newBomId,
-            sequence: stepData.sequence as number,
-            line: stepData.line as string,
-            process: stepData.process as string,
-            mainEquipment: stepData.mainEquipment as string,
-            standardManHours: stepData.standardManHours as number,
-            previousProcess: stepData.previousProcess as string | null,
-            nextProcess: stepData.nextProcess as string | null
+            sequence: step.sequence,
+            line: step.line,
+            process: step.process,
+            mainEquipment: step.mainEquipment,
+            standardManHours: step.standardManHours,
+            previousProcess: step.previousProcess,
+            nextProcess: step.nextProcess
           }
         );
       }
