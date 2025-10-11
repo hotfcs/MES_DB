@@ -7,7 +7,7 @@ import { useRolesStore } from "@/store/dataStore-optimized";
 import * as XLSX from "xlsx";
 
 export default function RoutingsPage() {
-  const { routings, routingSteps, addRouting, updateRouting, deleteRouting, saveRoutingSteps, getRoutingStepsByRoutingId } = useRoutingsStore();
+  const { routings, routingSteps, addRouting, deleteRouting, saveRoutingSteps, getRoutingStepsByRoutingId } = useRoutingsStore();
   const { lines } = useLinesStore();
   const { processes } = useProcessesStore();
   const { equipments } = useEquipmentsStore();
@@ -51,7 +51,7 @@ export default function RoutingsPage() {
     } else {
       setEditingSteps([]);
     }
-  }, [selectedRouting, routingSteps]);
+  }, [selectedRouting, routingSteps, getRoutingStepsByRoutingId]);
 
   const filteredRoutings = routings.filter(routing => {
     const matchesSearch = 
