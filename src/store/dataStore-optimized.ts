@@ -342,7 +342,7 @@ async function fetchAPI(url: string, options?: RequestInit) {
   let data;
   try {
     data = JSON.parse(text);
-  } catch (error) {
+  } catch {
     console.error('❌ JSON 파싱 오류:', text.substring(0, 200));
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
