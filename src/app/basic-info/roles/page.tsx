@@ -151,7 +151,7 @@ export default function RolesPage() {
 
   const handleExportExcel = () => {
     const worksheetData = [
-      ["권한코드", "권한명", "설명", "사용유무", "생성일"],
+      ["권한코드", "권한명", "설명", "사용유무", "생성일시"],
       ...filteredRoles.map(role => [
         role.code,
         role.name,
@@ -199,29 +199,22 @@ export default function RolesPage() {
 
   return (
     <div className="space-y-4">
-      {/* 알림 메시지 */}
+      {/* Notification */}
       {notification && (
-        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50">
-          <div className={`p-6 rounded-lg shadow-lg max-w-sm mx-4 ${
-            notification.type === 'success' 
-              ? 'bg-green-100 border border-green-400 text-green-700' 
-              : 'bg-red-100 border border-red-400 text-red-700'
+        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div className={`px-6 py-4 rounded-lg shadow-xl pointer-events-auto ${
+            notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
           }`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className={`w-4 h-4 rounded-full mr-3 ${
-                  notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-                }`}></div>
-                <span className="text-sm font-medium">{notification.message}</span>
-              </div>
-              <button
-                onClick={() => setNotification(null)}
-                className="ml-4 text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+            <div className="flex items-center gap-3">
+              <span className="text-lg font-medium">{notification.message}</span>
+              {notification.type === 'error' && (
+                <button
+                  onClick={() => setNotification(null)}
+                  className="ml-2 text-white hover:text-gray-200 text-xl"
+                >
+                  ✕
+                </button>
+              )}
             </div>
           </div>
         </div>

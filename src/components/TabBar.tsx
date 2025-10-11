@@ -64,14 +64,14 @@ export default function TabBar() {
   }
 
   return (
-    <div className="h-[40px] border-b border-black/10 bg-white/80 px-2 flex items-center gap-2 overflow-x-auto">
+    <div className="min-h-[40px] border-b border-black/10 bg-white/80 px-2 py-1 flex flex-wrap items-center gap-2">
       {tabs.map((tab) => {
         const active = pathname === tab.href;
         return (
           <div
             key={tab.href}
             className={
-              "flex items-center gap-2 h-8 px-3 rounded-full text-sm border " +
+              "flex items-center gap-2 h-8 px-3 rounded-full text-sm border whitespace-nowrap " +
               (active
                 ? "bg-black text-white border-black"
                 : "bg-white border-black/10 text-black")
@@ -93,7 +93,7 @@ export default function TabBar() {
       {tabs.length > 1 && (
         <button
           onClick={closeAllTabs}
-          className="h-8 px-3 rounded-full text-sm border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+          className="h-8 px-3 rounded-full text-sm border border-red-200 bg-red-50 text-red-600 hover:bg-red-100 transition-colors whitespace-nowrap"
           aria-label="close all tabs"
         >
           모든 탭 닫기

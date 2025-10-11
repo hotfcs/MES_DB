@@ -10,8 +10,8 @@ export async function GET(request: NextRequest) {
     let query = `
       SELECT 
         id, code, name, description, permissions, status, 
-        created_at as createdAt, 
-        modified_at as modifiedAt
+        FORMAT(created_at, 'yyyy-MM-dd HH:mm:ss') as createdAt, 
+        FORMAT(modified_at, 'yyyy-MM-dd HH:mm:ss') as modifiedAt
       FROM roles
       WHERE 1=1
     `;

@@ -44,8 +44,40 @@ code, pre, .font-mono {
 
 /* 테이블 스타일 통일 */
 table {
-  font-size: 0.875rem; /* 14px */
+  font-size: 0.875rem; /* 14px - text-sm */
   line-height: 1.5;
+  table-layout: auto;
+  width: 100%;
+}
+
+/* 테이블 헤더 통일 */
+table thead th {
+  font-size: 0.875rem !important; /* 14px - text-sm */
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* 테이블 바디 셀 통일 */
+table tbody td {
+  font-size: 0.875rem !important; /* 14px - text-sm */
+}
+
+/* 기본 테이블 패딩 (일반 페이지) */
+table:not(.compact-table) thead th {
+  padding: 0.75rem 1rem; /* py-3 px-4 */
+}
+
+table:not(.compact-table) tbody td {
+  padding: 0.75rem 1rem; /* py-3 px-4 */
+}
+
+/* 컴팩트 테이블 패딩 (여러 그리드가 있는 페이지용) */
+table.compact-table thead th {
+  padding: 0.5rem 0.75rem; /* py-2 px-3 */
+}
+
+table.compact-table tbody td {
+  padding: 0.5rem 0.75rem; /* py-2 px-3 */
 }
 
 /* 입력 필드 스타일 통일 */

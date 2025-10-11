@@ -6,10 +6,10 @@ export async function GET() {
     const query = `
       SELECT 
         id, code, name, type, manufacturer, model, 
-        purchase_date as purchaseDate, 
+        FORMAT(purchase_date, 'yyyy-MM-dd') as purchaseDate, 
         line, manager, description, status, 
-        created_at as createdAt, 
-        modified_at as modifiedAt 
+        FORMAT(created_at, 'yyyy-MM-dd HH:mm:ss') as createdAt, 
+        FORMAT(modified_at, 'yyyy-MM-dd HH:mm:ss') as modifiedAt 
       FROM equipments 
       ORDER BY created_at DESC
     `;

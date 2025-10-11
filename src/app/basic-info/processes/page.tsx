@@ -92,7 +92,7 @@ export default function ProcessesPage() {
 
   const handleExportExcel = () => {
     const worksheetData = [
-      ["공정코드", "공정명", "공정유형", "표준시간(분)", "소속라인", "공정창고", "설명", "사용유무", "생성일"],
+      ["공정코드", "공정명", "공정유형", "표준시간(분)", "소속라인", "공정창고", "설명", "사용유무", "생성일시"],
       ...filteredProcesses.map(process => [
         process.code,
         process.name,
@@ -189,13 +189,13 @@ export default function ProcessesPage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">공정코드</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">공정명</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">공정유형</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">표준시간(분)</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">소속라인</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">공정창고</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">사용유무</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">공정코드</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">공정명</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">공정유형</th>
+                  <th className="hidden 2xl:table-cell px-4 py-3 text-right text-sm font-medium text-gray-700 whitespace-nowrap">표준시간(분)</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">소속라인</th>
+                  <th className="hidden xl:table-cell px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">공정창고</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">사용유무</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -217,9 +217,9 @@ export default function ProcessesPage() {
                       <td className="px-4 py-3 text-sm">{process.code}</td>
                       <td className="px-4 py-3 text-sm font-medium">{process.name}</td>
                       <td className="px-4 py-3 text-sm">{process.type}</td>
-                      <td className="px-4 py-3 text-sm text-right">{process.standardTime}</td>
+                      <td className="hidden 2xl:table-cell px-4 py-3 text-sm text-right">{process.standardTime}</td>
                       <td className="px-4 py-3 text-sm">{process.line}</td>
-                      <td className="px-4 py-3 text-sm">{process.warehouse}</td>
+                      <td className="hidden xl:table-cell px-4 py-3 text-sm">{process.warehouse}</td>
                       <td className="px-4 py-3 text-sm">
                         <span
                           className={`px-2 py-1 rounded text-xs ${
@@ -279,11 +279,11 @@ export default function ProcessesPage() {
                 </p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">생성일</label>
+                <label className="text-sm font-medium text-gray-700">생성일시</label>
                 <p className="text-sm mt-1">{selectedProcess.createdAt}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">수정일</label>
+                <label className="text-sm font-medium text-gray-700">수정일시</label>
                 <p className="text-sm mt-1">{selectedProcess.modifiedAt || "-"}</p>
               </div>
             </div>

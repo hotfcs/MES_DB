@@ -180,7 +180,7 @@ export default function RoutingsPage() {
       saveRoutingSteps(selectedRouting.id, stepsToSave);
       
       setNotification({ type: 'success', message: '저장완료.' });
-      setTimeout(() => setNotification(null), 500);
+      setTimeout(() => setNotification(null), 3000);
     } catch (err: unknown) {
       setNotification({ type: 'error', message: err instanceof Error ? err.message : '저장 중 오류가 발생했습니다.' });
     }
@@ -267,8 +267,8 @@ export default function RoutingsPage() {
 
       {/* Main Grid and Detail Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        {/* Left: Routing List (2 columns) */}
-        <div className="lg:col-span-2 bg-white rounded-lg border border-black/10 overflow-hidden">
+        {/* Left: Routing List (1 column - 20%) */}
+        <div className="lg:col-span-1 bg-white rounded-lg border border-black/10 overflow-hidden">
           <div className="bg-gray-50 border-b px-4 py-3">
             <h2 className="text-sm font-semibold text-gray-700">라우팅 목록</h2>
           </div>
@@ -306,8 +306,8 @@ export default function RoutingsPage() {
           </div>
         </div>
 
-        {/* Right: Routing Steps Detail Grid (3 columns) */}
-        <div className="lg:col-span-3 bg-white rounded-lg border border-black/10 overflow-hidden">
+        {/* Right: Routing Steps Detail Grid (4 columns - 80%) */}
+        <div className="lg:col-span-4 bg-white rounded-lg border border-black/10 overflow-hidden">
           <div className="bg-gray-50 border-b px-4 py-3 flex justify-between items-center">
             <h2 className="text-sm font-semibold text-gray-700">
               {selectedRouting ? `${selectedRouting.name} - 공정 상세` : "라우팅을 선택하세요"}
@@ -545,13 +545,22 @@ export default function RoutingsPage() {
 
       {/* Notification */}
       {notification && (
-        <div 
-          className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-4 rounded-lg shadow-lg text-white z-50 ${
-            notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-          }`}
-          onClick={() => notification.type === 'error' && setNotification(null)}
-        >
-          {notification.message}
+        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div className={`px-6 py-4 rounded-lg shadow-xl pointer-events-auto ${
+            notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+          }`}>
+            <div className="flex items-center gap-3">
+              <span className="text-lg font-medium">{notification.message}</span>
+              {notification.type === 'error' && (
+                <button
+                  onClick={() => setNotification(null)}
+                  className="ml-2 text-white hover:text-gray-200 text-xl"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

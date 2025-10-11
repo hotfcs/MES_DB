@@ -7,7 +7,7 @@ import { useRolesStore } from "@/store/dataStore-optimized";
 import * as XLSX from "xlsx";
 
 export default function BOMPage() {
-  const { boms, bomItems, addBOM, updateBOM, deleteBOM, saveBOMItems, getBOMItemsByBOMId } = useBOMsStore();
+  const { boms, bomItems, bomRoutingSteps, addBOM, updateBOM, deleteBOM, saveBOMItems, getBOMItemsByBOMId, getBOMRoutingStepsByBOMId } = useBOMsStore();
   const { products } = useProductsStore();
   const { materials } = useMaterialsStore();
   const { routings, routingSteps, getRoutingStepsByRoutingId } = useRoutingsStore();
@@ -21,8 +21,21 @@ export default function BOMPage() {
   const [selectedBOM, setSelectedBOM] = useState<BOM | null>(null);
   const [selectedProcessSequence, setSelectedProcessSequence] = useState<number | null>(null);
   const [editingItems, setEditingItems] = useState<BOMItem[]>([]);
+  const [originalItems, setOriginalItems] = useState<BOMItem[]>([]); // 편집 전 원본 데이터
   const [showAddBOMModal, setShowAddBOMModal] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
+  
+  // 패널 확장/축소 상태
+  const [expandedPanels, setExpandedPanels] = useState({
+    products: true,
+    boms: true,
+    routing: true,
+    materials: true
+  });
+  
+  const togglePanel = (panel: keyof typeof expandedPanels) => {
+    setExpandedPanels(prev => ({ ...prev, [panel]: !prev[panel] }));
+  };
   
   const [newBOM, setNewBOM] = useState({
     productCode: "",
@@ -78,19 +91,29 @@ export default function BOMPage() {
   useEffect(() => {
     if (selectedBOM) {
       const items = getBOMItemsByBOMId(selectedBOM.id);
-      setEditingItems(items.map(i => ({...i})));
+      const itemsCopy = items.map(i => ({...i}));
+      setEditingItems(itemsCopy);
+      setOriginalItems(items.map(i => ({...i}))); // 원본 데이터 백업
       setSelectedProcessSequence(null); // Reset selected process
     } else {
       setEditingItems([]);
+      setOriginalItems([]);
       setSelectedProcessSequence(null);
     }
   }, [selectedBOM, bomItems]);
 
-  // Get routing info for selected BOM
+  // Get routing info for selected BOM (from snapshot)
   const getRoutingInfo = () => {
     if (!selectedBOM) return [];
     
-    const steps = getRoutingStepsByRoutingId(selectedBOM.routingId);
+    // Use BOM routing steps snapshot instead of current routing steps
+    const steps = getBOMRoutingStepsByBOMId(selectedBOM.id);
+    
+    // Fallback to current routing if no snapshot exists (for old BOMs)
+    if (steps.length === 0 && selectedBOM.routingId) {
+      return getRoutingStepsByRoutingId(selectedBOM.routingId).sort((a, b) => a.sequence - b.sequence);
+    }
+    
     return steps.sort((a, b) => a.sequence - b.sequence);
   };
 
@@ -165,11 +188,23 @@ export default function BOMPage() {
       lossRate: 0,
       alternateMaterial: ""
     };
-    setEditingItems([...editingItems, newItem]);
+    
+    // 새 항목 추가 후 공정순서로 정렬
+    const updatedItems = [...editingItems, newItem].sort((a, b) => a.processSequence - b.processSequence);
+    setEditingItems(updatedItems);
   };
 
   const handleDeleteItem = (itemId: number) => {
     setEditingItems(editingItems.filter(i => i.id !== itemId));
+  };
+  
+  // 편집 내용 초기화 (원본 데이터로 복원)
+  const handleReset = () => {
+    if (confirm('편집 중인 내용을 모두 취소하고 원래 상태로 되돌리시겠습니까?')) {
+      setEditingItems(originalItems.map(i => ({...i})));
+      setNotification({ type: 'success', message: '초기화되었습니다.' });
+      setTimeout(() => setNotification(null), 2000);
+    }
   };
 
   const handleItemChange = (itemId: number, field: keyof BOMItem, value: string | number) => {
@@ -204,6 +239,46 @@ export default function BOMPage() {
         }
       }
 
+      // 동일 공정 내 자재 중복 검증
+      const duplicates: { processSequence: number; processName: string; materialCode: string; materialName: string }[] = [];
+      
+      editingItems.forEach((item, index) => {
+        if (item.materialCode) {
+          const hasDuplicate = editingItems.some((otherItem, otherIndex) => 
+            index !== otherIndex && 
+            item.processSequence === otherItem.processSequence && 
+            item.materialCode === otherItem.materialCode
+          );
+          
+          if (hasDuplicate) {
+            const alreadyAdded = duplicates.some(
+              d => d.processSequence === item.processSequence && d.materialCode === item.materialCode
+            );
+            
+            if (!alreadyAdded) {
+              duplicates.push({
+                processSequence: item.processSequence,
+                processName: item.processName,
+                materialCode: item.materialCode,
+                materialName: item.materialName
+              });
+            }
+          }
+        }
+      });
+      
+      if (duplicates.length > 0) {
+        const duplicateList = duplicates.map(
+          d => `공정 ${d.processSequence} (${d.processName})에 자재 ${d.materialCode} (${d.materialName})`
+        ).join(', ');
+        
+        setNotification({ 
+          type: 'error', 
+          message: `동일 공정에 동일한 자재가 중복되었습니다: ${duplicateList}` 
+        });
+        return;
+      }
+
       // Generate new IDs for new items
       let maxId = bomItems.length > 0 ? Math.max(...bomItems.map(i => i.id)) : 0;
       const itemsToSave = editingItems.map(item => {
@@ -216,7 +291,7 @@ export default function BOMPage() {
       saveBOMItems(selectedBOM.id, itemsToSave);
       
       setNotification({ type: 'success', message: '저장완료.' });
-      setTimeout(() => setNotification(null), 500);
+      setTimeout(() => setNotification(null), 3000);
     } catch (err: unknown) {
       setNotification({ type: 'error', message: err instanceof Error ? err.message : '저장 중 오류가 발생했습니다.' });
     }
@@ -294,13 +369,6 @@ export default function BOMPage() {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={handleSave}
-              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 w-32"
-              disabled={!selectedBOM || !hasEditPermission()}
-            >
-              💾 저장
-            </button>
-            <button
               onClick={handleExportExcel}
               className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors w-32"
             >
@@ -343,70 +411,87 @@ export default function BOMPage() {
         </div>
       </div>
 
-      {/* Main Grid and Detail Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        {/* Left Section (2 columns) */}
-        <div className="lg:col-span-2 space-y-4">
-          {/* Product List */}
+      {/* Collapsible Panels Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-10 gap-4">
+        {/* Left: Product List (3 columns - 30%) */}
+        <div className="lg:col-span-3 space-y-4">
+          {/* Panel 1: Product List */}
           <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
-            <div className="bg-gray-50 border-b px-4 py-3">
-              <h2 className="text-sm font-semibold text-gray-700">모제품 리스트</h2>
+            <div 
+              className="px-4 py-3 bg-gray-50 border-b cursor-pointer hover:bg-gray-100 transition-colors flex justify-between items-center"
+              onClick={() => togglePanel('products')}
+            >
+              <h2 className="text-base font-semibold">📦 모제품 리스트 ({filteredProducts.length}건)</h2>
+              <button className="text-gray-600 hover:text-gray-900 transition-colors">
+                {expandedPanels.products ? '▼' : '▶'}
+              </button>
             </div>
-            <div className="overflow-x-auto" style={{ maxHeight: 'calc(50vh - 150px)' }}>
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">제품명</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">품목구분</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">거래처</th>
-                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">BOM유무</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredProducts.length === 0 ? (
+            {expandedPanels.products && (
+              <div className="overflow-auto" style={{ maxHeight: '400px' }}>
+                <table className="w-full">
+                  <thead className="bg-gray-50">
                     <tr>
-                      <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
-                        등록된 제품이 없습니다.
-                      </td>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">제품명</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">품목구분</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">거래처</th>
+                      <th className="px-4 py-3 text-center text-sm font-medium text-gray-700">BOM유무</th>
                     </tr>
-                  ) : (
-                    filteredProducts.map((product: Product & { hasBOM: boolean }) => (
-                      <tr
-                        key={product.id}
-                        onClick={() => {
-                          setSelectedProductCode(product.code);
-                          setSelectedBOM(null);
-                        }}
-                        className={`cursor-pointer hover:bg-gray-50 transition-colors ${
-                          selectedProductCode === product.code ? "bg-blue-50" : ""
-                        }`}
-                      >
-                        <td className="px-4 py-3 text-sm font-medium">{product.name}</td>
-                        <td className="px-4 py-3 text-sm">{product.category}</td>
-                        <td className="px-4 py-3 text-sm">{product.customer}</td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`px-2 py-1 rounded text-xs ${
-                            product.hasBOM 
-                              ? "bg-green-100 text-green-700" 
-                              : "bg-gray-100 text-gray-700"
-                          }`}>
-                            {product.hasBOM ? "O" : "X"}
-                          </span>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {filteredProducts.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
+                          등록된 제품이 없습니다.
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      filteredProducts.map((product: Product & { hasBOM: boolean }) => (
+                        <tr
+                          key={product.id}
+                          onClick={() => {
+                            setSelectedProductCode(product.code);
+                            setSelectedBOM(null);
+                          }}
+                          className={`cursor-pointer hover:bg-gray-50 transition-colors ${
+                            selectedProductCode === product.code ? "bg-blue-50" : ""
+                          }`}
+                        >
+                          <td className="px-4 py-3 text-sm font-medium">{product.name}</td>
+                          <td className="px-4 py-3 text-sm">{product.category}</td>
+                          <td className="px-4 py-3 text-sm">{product.customer}</td>
+                          <td className="px-4 py-3 text-center">
+                            <span className={`px-2 py-1 rounded text-xs ${
+                              product.hasBOM 
+                                ? "bg-green-100 text-green-700" 
+                                : "bg-gray-100 text-gray-700"
+                            }`}>
+                              {product.hasBOM ? "O" : "X"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
             </div>
-          </div>
+          )}
+        </div>
+        </div>
 
-          {/* BOM List for Selected Product */}
+        {/* Right: BOM List + Routing + Materials (7 columns - 70%) */}
+        <div className="lg:col-span-7 space-y-4">
+          {/* Panel 2: BOM List for Selected Product */}
           <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
-            <div className="bg-gray-50 border-b px-4 py-3 flex justify-between items-center">
-              <h2 className="text-sm font-semibold text-gray-700">BOM 리스트</h2>
-              {selectedProductCode && hasEditPermission() && (
-                <div className="flex gap-2">
+            <div 
+              className="px-4 py-3 bg-gray-50 border-b cursor-pointer hover:bg-gray-100 transition-colors flex justify-between items-center"
+              onClick={() => togglePanel('boms')}
+            >
+              <h2 className="text-base font-semibold">
+                📋 BOM 리스트 {selectedProductCode && `(${productBOMs.length}건)`}
+              </h2>
+              <div className="flex items-center gap-2">
+                {expandedPanels.boms && selectedProductCode && hasEditPermission() && (
+                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => {
                       const product = activeProducts.find((p: Product) => p.code === selectedProductCode);
@@ -421,28 +506,33 @@ export default function BOMPage() {
                         setShowAddBOMModal(true);
                       }
                     }}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors w-32"
+                    className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors text-sm"
                   >
                     ➕ BOM추가
                   </button>
                   <button
                     onClick={handleDeleteBOM}
                     disabled={!selectedBOM}
-                    className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 w-32"
+                    className="bg-red-600 text-white px-3 py-1 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 text-sm"
                   >
                     🗑️ BOM삭제
                   </button>
                 </div>
               )}
+              <button className="text-gray-600 hover:text-gray-900 transition-colors">
+                {expandedPanels.boms ? '▼' : '▶'}
+              </button>
             </div>
-            <div className="overflow-x-auto" style={{ maxHeight: 'calc(50vh - 150px)' }}>
+          </div>
+          {expandedPanels.boms && (
+            <div className="overflow-x-auto" style={{ maxHeight: '400px' }}>
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">리비전</th>
                     <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">라우팅명</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">생성일</th>
-                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">수정일</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">생성일시</th>
+                    <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">수정일시</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -481,40 +571,45 @@ export default function BOMPage() {
                 </tbody>
               </table>
             </div>
+          )}
           </div>
-        </div>
 
-        {/* Right Section (3 columns) */}
-        <div className="lg:col-span-3 space-y-4">
-          {/* Top: Routing Process List */}
+          {/* Panel 3: Routing Process List */}
           <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
-            <div className="bg-gray-50 border-b px-4 py-3">
-              <h2 className="text-sm font-semibold text-gray-700">
-                {selectedBOM ? `공정 라우팅 리스트 - ${selectedBOM.routingName} (${selectedBOM.revision})` : "BOM을 선택하세요"}
+            <div 
+              className="px-4 py-3 bg-gray-50 border-b cursor-pointer hover:bg-gray-100 transition-colors flex justify-between items-center"
+              onClick={() => togglePanel('routing')}
+            >
+              <h2 className="text-base font-semibold">
+                🔧 {selectedBOM ? `공정 라우팅 리스트 - ${selectedBOM.routingName} (${selectedBOM.revision})` : "BOM을 선택하세요"}
               </h2>
+              <button className="text-gray-600 hover:text-gray-900 transition-colors">
+                {expandedPanels.routing ? '▼' : '▶'}
+              </button>
             </div>
-            <div className="overflow-x-auto" style={{ maxHeight: 'calc(50vh - 150px)' }}>
-              <table className="w-full">
-                <thead className="bg-gray-50 sticky top-0">
-                  <tr>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">공정순서</th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">라인</th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">공정</th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">주설비</th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">표준공수</th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">이전공정</th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">다음공정</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {!selectedBOM ? (
+            {expandedPanels.routing && (
+              <div className="overflow-auto" style={{ maxHeight: '400px' }}>
+                <table className="w-full">
+                  <thead className="bg-gray-50 sticky top-0">
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-gray-500 text-sm">
-                        좌측에서 BOM을 선택하면 공정 라우팅 리스트가 표시됩니다.
-                      </td>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">공정순서</th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">라인</th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">공정</th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">주설비</th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">표준공수</th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">이전공정</th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">다음공정</th>
                     </tr>
-                  ) : (
-                    (() => {
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {!selectedBOM ? (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-8 text-center text-gray-500 text-sm">
+                          좌측에서 BOM을 선택하면 공정 라우팅 리스트가 표시됩니다.
+                        </td>
+                      </tr>
+                    ) : (
+                      (() => {
                       const routingInfo = getRoutingInfo();
                       
                       if (routingInfo.length === 0) {
@@ -563,64 +658,97 @@ export default function BOMPage() {
                 </tbody>
               </table>
             </div>
+          )}
           </div>
 
-          {/* Bottom: Process Material List */}
+          {/* Panel 4: Process Material List */}
           <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
-            <div className="bg-gray-50 border-b px-4 py-3 flex justify-between items-center">
-              <h2 className="text-sm font-semibold text-gray-700">
-                공정별 자재 리스트
+            <div 
+              className="px-4 py-3 bg-gray-50 border-b cursor-pointer hover:bg-gray-100 transition-colors flex justify-between items-center"
+              onClick={() => togglePanel('materials')}
+            >
+              <h2 className="text-base font-semibold">
+                🧱 공정별 자재 리스트
                 {selectedProcessSequence !== null && (
                   <span className="ml-2 text-xs text-blue-600">
                     (공정 {selectedProcessSequence} 선택됨)
                   </span>
                 )}
               </h2>
-            {selectedBOM && hasEditPermission() && (
-              <button
-                onClick={handleAddItem}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors w-32"
-              >
-                ➕ 자재 추가
-              </button>
-            )}
+              <div className="flex items-center gap-2">
+                {expandedPanels.materials && selectedBOM && hasEditPermission() && (
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleReset();
+                      }}
+                      className="bg-gray-600 text-white px-3 py-1 rounded-lg hover:bg-gray-700 transition-colors text-sm"
+                    >
+                      🔄 초기화
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddItem();
+                      }}
+                      className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                    >
+                      ➕ 자재추가
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSave();
+                      }}
+                      className="bg-purple-600 text-white px-3 py-1 rounded-lg hover:bg-purple-700 transition-colors text-sm"
+                    >
+                      💾 자재저장
+                    </button>
+                  </>
+                )}
+                <button className="text-gray-600 hover:text-gray-900 transition-colors">
+                  {expandedPanels.materials ? '▼' : '▶'}
+                </button>
+              </div>
             </div>
-            <div className="overflow-x-auto" style={{ maxHeight: 'calc(50vh - 150px)' }}>
-              <table className="w-full">
-                <thead className="bg-gray-50 sticky top-0">
-                  <tr>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">공정순서</th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">공정명</th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">소요자재</th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">소요량</th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">단위</th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">손실율(%)</th>
-                    <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">대체자재</th>
-                    {hasEditPermission() && (
-                      <th className="px-2 py-2 text-center text-xs font-medium text-gray-700">삭제</th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {!selectedBOM ? (
+            {expandedPanels.materials && (
+              <div className="overflow-auto" style={{ maxHeight: '400px' }}>
+                <table className="w-full">
+                  <thead className="bg-gray-50 sticky top-0">
                     <tr>
-                      <td colSpan={hasEditPermission() ? 9 : 8} className="px-4 py-8 text-center text-gray-500 text-sm">
-                        좌측에서 BOM을 선택하면 공정별 자재 리스트가 표시됩니다.
-                      </td>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">공정순서</th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">공정명</th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">소요자재</th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">소요량</th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">단위</th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">손실율(%)</th>
+                      <th className="px-2 py-2 text-left text-xs font-medium text-gray-700">대체자재</th>
+                      {hasEditPermission() && (
+                        <th className="px-2 py-2 text-center text-xs font-medium text-gray-700">삭제</th>
+                      )}
                     </tr>
-                  ) : editingItems.length === 0 ? (
-                    <tr>
-                      <td colSpan={hasEditPermission() ? 8 : 7} className="px-4 py-8 text-center text-gray-500 text-sm">
-                        등록된 자재가 없습니다. 공정을 선택하고 자재를 추가해주세요.
-                      </td>
-                    </tr>
-                  ) : (
-                    editingItems.map((item) => {
-                      const routingInfo = getRoutingInfo();
-                      const selectedMaterial = activeMaterials.find((m: Material) => m.code === item.materialCode);
-                      
-                      return (
-                        <tr key={item.id} className="hover:bg-gray-50">
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {!selectedBOM ? (
+                      <tr>
+                        <td colSpan={hasEditPermission() ? 9 : 8} className="px-4 py-8 text-center text-gray-500 text-sm">
+                          좌측에서 BOM을 선택하면 공정별 자재 리스트가 표시됩니다.
+                        </td>
+                      </tr>
+                    ) : editingItems.length === 0 ? (
+                      <tr>
+                        <td colSpan={hasEditPermission() ? 8 : 7} className="px-4 py-8 text-center text-gray-500 text-sm">
+                          등록된 자재가 없습니다. 공정을 선택하고 자재를 추가해주세요.
+                        </td>
+                      </tr>
+                    ) : (
+                      editingItems.map((item) => {
+                        const routingInfo = getRoutingInfo();
+                        const selectedMaterial = activeMaterials.find((m: Material) => m.code === item.materialCode);
+                        
+                        return (
+                          <tr key={item.id} className="hover:bg-gray-50">
                           <td className="px-2 py-2">
                             <div className="text-xs text-gray-700 text-center font-semibold">{item.processSequence}</div>
                           </td>
@@ -694,9 +822,10 @@ export default function BOMPage() {
                       );
                     })
                   )}
-                </tbody>
-              </table>
-            </div>
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -769,13 +898,22 @@ export default function BOMPage() {
 
       {/* Notification */}
       {notification && (
-        <div 
-          className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-4 rounded-lg shadow-lg text-white z-50 ${
-            notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-          }`}
-          onClick={() => notification.type === 'error' && setNotification(null)}
-        >
-          {notification.message}
+        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div className={`px-6 py-4 rounded-lg shadow-xl pointer-events-auto ${
+            notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+          }`}>
+            <div className="flex items-center gap-3">
+              <span className="text-lg font-medium">{notification.message}</span>
+              {notification.type === 'error' && (
+                <button
+                  onClick={() => setNotification(null)}
+                  className="ml-2 text-white hover:text-gray-200 text-xl"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

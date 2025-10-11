@@ -95,7 +95,7 @@ export default function EquipmentsPage() {
 
   const handleExportExcel = () => {
     const worksheetData = [
-      ["설비코드", "설비명", "설비유형", "제조사", "모델명", "구매일", "소속라인", "담당자", "설명", "사용유무", "생성일"],
+      ["설비코드", "설비명", "설비유형", "제조사", "모델명", "구매일", "소속라인", "담당자", "설명", "사용유무", "생성일시"],
       ...filteredEquipments.map(equipment => [
         equipment.code,
         equipment.name,
@@ -194,13 +194,13 @@ export default function EquipmentsPage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">설비코드</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">설비명</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">설비유형</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">제조사</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">모델명</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">소속라인</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">사용유무</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">설비코드</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">설비명</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">설비유형</th>
+                  <th className="hidden xl:table-cell px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">제조사</th>
+                  <th className="hidden 2xl:table-cell px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">모델명</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">소속라인</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">사용유무</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -222,8 +222,8 @@ export default function EquipmentsPage() {
                       <td className="px-4 py-3 text-sm">{equipment.code}</td>
                       <td className="px-4 py-3 text-sm font-medium">{equipment.name}</td>
                       <td className="px-4 py-3 text-sm">{equipment.type}</td>
-                      <td className="px-4 py-3 text-sm">{equipment.manufacturer}</td>
-                      <td className="px-4 py-3 text-sm">{equipment.model}</td>
+                      <td className="hidden xl:table-cell px-4 py-3 text-sm">{equipment.manufacturer}</td>
+                      <td className="hidden 2xl:table-cell px-4 py-3 text-sm">{equipment.model}</td>
                       <td className="px-4 py-3 text-sm">{equipment.line}</td>
                       <td className="px-4 py-3 text-sm">
                         <span
@@ -292,11 +292,11 @@ export default function EquipmentsPage() {
                 </p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">생성일</label>
+                <label className="text-sm font-medium text-gray-700">생성일시</label>
                 <p className="text-sm mt-1">{selectedEquipment.createdAt}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">수정일</label>
+                <label className="text-sm font-medium text-gray-700">수정일시</label>
                 <p className="text-sm mt-1">{selectedEquipment.modifiedAt || "-"}</p>
               </div>
             </div>

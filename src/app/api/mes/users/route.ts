@@ -36,10 +36,7 @@ export async function GET(request: NextRequest) {
       SELECT 
         id, account, password, name, role, department, position, 
         phone, email, status, 
-        CASE 
-          WHEN LEN(image) > 100 THEN SUBSTRING(image, 1, 100) + '...' 
-          ELSE image 
-        END as image, 
+        image, 
         FORMAT(last_login, 'yyyy-MM-dd HH:mm:ss') as lastLogin, 
         FORMAT(join_date, 'yyyy-MM-dd') as joinDate, 
         FORMAT(resign_date, 'yyyy-MM-dd') as resignDate,
@@ -154,8 +151,17 @@ export async function POST(request: NextRequest) {
       success: true,
       message: '사용자가 추가되었습니다',
     }, { status: 201 });
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('사용자 추가 에러:', error);
+    
+    // UNIQUE KEY 제약 조건 위반 (사용자 계정 중복)
+    if (error?.number === 2627) {
+      return NextResponse.json({
+        success: false,
+        message: '이미 존재하는 사용자 계정입니다. 다른 계정명을 사용해주세요.',
+      }, { status: 400 });
+    }
+    
     return NextResponse.json({
       success: false,
       message: '사용자 추가 실패',
@@ -215,8 +221,17 @@ export async function PUT(request: NextRequest) {
       message: '사용자 정보가 수정되었습니다',
       rowsAffected,
     });
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('사용자 수정 에러:', error);
+    
+    // UNIQUE KEY 제약 조건 위반 (사용자 계정 중복)
+    if (error?.number === 2627) {
+      return NextResponse.json({
+        success: false,
+        message: '이미 존재하는 사용자 계정입니다. 다른 계정명을 사용해주세요.',
+      }, { status: 400 });
+    }
+    
     return NextResponse.json({
       success: false,
       message: '사용자 수정 실패',

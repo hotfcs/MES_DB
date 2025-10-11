@@ -30,7 +30,7 @@ const checkAndUpdatePlanStatus = (
 };
 
 export default function WorkOrderPage() {
-  const { workOrders, addWorkOrder, updateWorkOrder, deleteWorkOrder } = useWorkOrdersStore();
+  const { workOrders, workOrderRoutingSteps, workOrderMaterials, getWorkOrderRoutingSteps, getWorkOrderMaterials, addWorkOrder, updateWorkOrder, deleteWorkOrder } = useWorkOrdersStore();
   const { productionPlans, updateProductionPlan } = useProductionPlansStore();
   const { products } = useProductsStore();
   const { lines } = useLinesStore();
@@ -46,6 +46,18 @@ export default function WorkOrderPage() {
   const [selectedOrder, setSelectedOrder] = useState<WorkOrder | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  
+  // 패널 확장/축소 상태
+  const [expandedPanels, setExpandedPanels] = useState({
+    plans: true,
+    orders: true,
+    routing: true,
+    materials: true
+  });
+  
+  const togglePanel = (panel: keyof typeof expandedPanels) => {
+    setExpandedPanels(prev => ({ ...prev, [panel]: !prev[panel] }));
+  };
   
   const [newOrder, setNewOrder] = useState({
     orderCode: "",
@@ -102,19 +114,29 @@ export default function WorkOrderPage() {
 
   // Filter plans: exclude plans with end date before today
   const today = new Date().toISOString().split("T")[0];
-  const filteredPlans = productionPlans.filter(plan => {
-    // Get customer for the product
-    const product = products.find((p: Product) => p.code === plan.productCode);
-    const customerName = product?.customer || "";
-    
-    const matchesSearch = 
-      (plan.productName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      customerName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = planStatusFilter === "all" || plan.status === planStatusFilter;
-    const notExpired = plan.endDate >= today; // Exclude plans with end date before today
-    
-    return matchesSearch && matchesStatus && notExpired;
-  });
+  const filteredPlans = (() => {
+    // 먼저 모든 필터 적용
+    let filtered = productionPlans.filter(plan => {
+      // Get customer for the product
+      const product = products.find((p: Product) => p.code === plan.productCode);
+      const customerName = product?.customer || "";
+      
+      const matchesSearch = 
+        (plan.productName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        customerName.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = planStatusFilter === "all" || plan.status === planStatusFilter;
+      const notExpired = plan.endDate >= today; // Exclude plans with end date before today
+      
+      return matchesSearch && matchesStatus && notExpired;
+    });
+
+    // 검색어와 상태 필터가 없으면 최신 1000건만 반환
+    if (!searchTerm && planStatusFilter === "all") {
+      filtered = filtered.slice(0, 1000);
+    }
+
+    return filtered;
+  })();
 
   const filteredOrders = workOrders.filter(order => {
     // Only show orders for the selected plan
@@ -133,10 +155,12 @@ export default function WorkOrderPage() {
     return matchesSearch;
   });
 
-  // Get routing steps and BOM items for selected order (not plan)
-  const selectedOrderBOM = selectedOrder ? boms.find(b => b.productCode === selectedOrder.productCode) : null;
-  const selectedRoutingSteps = selectedOrderBOM ? routingSteps.filter(rs => rs.routingId === selectedOrderBOM.routingId) : [];
-  const selectedBOMItems = selectedOrderBOM ? bomItems.filter(bi => bi.bomId === selectedOrderBOM.id) : [];
+  // Get routing steps and materials for selected work order (from snapshot)
+  const selectedRoutingSteps = selectedOrder ? getWorkOrderRoutingSteps(selectedOrder.id) : [];
+  const selectedBOMItems = selectedOrder ? getWorkOrderMaterials(selectedOrder.id) : [];
+  
+  // Check if snapshot data exists (for backward compatibility with old work orders)
+  const hasSnapshotData = selectedOrder && (selectedRoutingSteps.length > 0 || selectedBOMItems.length > 0);
 
   const handlePlanSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const planCode = e.target.value;
@@ -314,13 +338,302 @@ export default function WorkOrderPage() {
       "상태": order.status,
       "작업자": order.worker,
       "비고": order.note,
-      "생성일": order.createdAt,
-      "수정일": order.modifiedAt || "-"
+      "생성일시": order.createdAt,
+      "수정일시": order.modifiedAt || "-"
     }));
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "작업지시");
     XLSX.writeFile(workbook, "작업지시.xlsx");
+  };
+
+  const handlePrintWorkOrder = () => {
+    if (!selectedOrder) {
+      alert("출력할 작업지시를 선택해주세요.");
+      return;
+    }
+
+    const routingSteps = getWorkOrderRoutingSteps(selectedOrder.id);
+    const materialItems = getWorkOrderMaterials(selectedOrder.id);
+
+    // Create print window
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert("팝업 차단을 해제해주세요.");
+      return;
+    }
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>작업지시서 - ${selectedOrder.orderCode}</title>
+        <style>
+          @media print {
+            @page { margin: 10mm; }
+            body { margin: 0; }
+          }
+          body {
+            font-family: 'Malgun Gothic', sans-serif;
+            padding: 10px;
+            line-height: 1.3;
+            font-size: 11px;
+          }
+          .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+          }
+          .header {
+            flex: 1;
+          }
+          .header h1 {
+            font-size: 22px;
+            margin: 0 0 5px 0;
+            font-weight: bold;
+          }
+          .header .order-code {
+            font-size: 14px;
+            color: #333;
+            font-weight: bold;
+          }
+          .signature-section {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px;
+            min-width: 240px;
+          }
+          .signature-box {
+            border: 1px solid #999;
+            padding: 5px;
+            text-align: center;
+            min-height: 45px;
+          }
+          .signature-title {
+            font-weight: bold;
+            margin-bottom: 15px;
+            font-size: 10px;
+          }
+          .info-section {
+            margin-bottom: 15px;
+          }
+          .info-title {
+            font-size: 13px;
+            font-weight: bold;
+            background: #f0f0f0;
+            padding: 5px 8px;
+            border-left: 3px solid #2563eb;
+            margin-bottom: 8px;
+          }
+          .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 5px;
+            margin-bottom: 5px;
+          }
+          .info-row {
+            display: flex;
+            padding: 4px 8px;
+            border-bottom: 1px solid #e5e5e5;
+            font-size: 11px;
+          }
+          .info-label {
+            font-weight: bold;
+            width: 90px;
+            flex-shrink: 0;
+          }
+          .info-value {
+            flex: 1;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px;
+            font-size: 10px;
+          }
+          th, td {
+            border: 1px solid #ccc;
+            padding: 4px 6px;
+            text-align: left;
+          }
+          th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+            font-size: 10px;
+          }
+          .text-center { text-align: center; }
+          .text-right { text-align: right; }
+          .footer {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #ccc;
+            text-align: center;
+            color: #666;
+            font-size: 9px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header-container">
+          <div class="header">
+            <h1>작업지시서</h1>
+            <div class="order-code">지시번호: ${selectedOrder.orderCode}</div>
+          </div>
+          <div class="signature-section">
+            <div class="signature-box">
+              <div class="signature-title">작성</div>
+              <div>______</div>
+            </div>
+            <div class="signature-box">
+              <div class="signature-title">검토</div>
+              <div>______</div>
+            </div>
+            <div class="signature-box">
+              <div class="signature-title">승인</div>
+              <div>______</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <div class="info-title">📋 기본 정보</div>
+          <div class="info-grid">
+            <div class="info-row">
+              <div class="info-label">지시일:</div>
+              <div class="info-value">${selectedOrder.orderDate}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">계획코드:</div>
+              <div class="info-value">${selectedOrder.planCode || '-'}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">제품코드:</div>
+              <div class="info-value">${selectedOrder.productCode}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">제품명:</div>
+              <div class="info-value"><strong>${selectedOrder.productName}</strong></div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">지시수량:</div>
+              <div class="info-value"><strong>${selectedOrder.orderQuantity.toLocaleString()} ${selectedOrder.unit}</strong></div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">시작일:</div>
+              <div class="info-value">${selectedOrder.startDate || '-'}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">종료일:</div>
+              <div class="info-value">${selectedOrder.endDate || '-'}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">상태:</div>
+              <div class="info-value">${selectedOrder.status}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">작업자:</div>
+              <div class="info-value">${selectedOrder.worker || '-'}</div>
+            </div>
+          </div>
+          ${selectedOrder.note ? `
+            <div class="info-row">
+              <div class="info-label">비고:</div>
+              <div class="info-value">${selectedOrder.note}</div>
+            </div>
+          ` : ''}
+        </div>
+
+        ${routingSteps.length > 0 ? `
+          <div class="info-section">
+            <div class="info-title">⚙️ 공정별 지시</div>
+            <table>
+              <thead>
+                <tr>
+                  <th class="text-center" style="width: 60px;">공정순서</th>
+                  <th style="width: 25%;">공정</th>
+                  <th style="width: 25%;">주설비</th>
+                  <th class="text-right" style="width: 15%;">표준공수</th>
+                  <th class="text-right" style="width: 15%;">총공수</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${routingSteps.map(step => {
+                  const totalManHours = selectedOrder.orderQuantity * step.standardManHours;
+                  return `
+                    <tr>
+                      <td class="text-center">${step.sequence}</td>
+                      <td><strong>${step.process}</strong></td>
+                      <td>${step.mainEquipment}</td>
+                      <td class="text-right">${step.standardManHours}h</td>
+                      <td class="text-right"><strong>${totalManHours.toLocaleString()}h</strong></td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        ` : ''}
+
+        ${materialItems.length > 0 ? `
+          <div class="info-section">
+            <div class="info-title">📦 투입자재</div>
+            <table>
+              <thead>
+                <tr>
+                  <th class="text-center" style="width: 50px;">공정</th>
+                  <th style="width: 12%;">공정명</th>
+                  <th style="width: 12%;">자재코드</th>
+                  <th style="width: 20%;">자재명</th>
+                  <th class="text-right" style="width: 12%;">단위소요량</th>
+                  <th class="text-right" style="width: 12%;">총투입량</th>
+                  <th class="text-right" style="width: 8%;">손실율</th>
+                  <th style="width: 14%;">대체자재</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${materialItems.map(item => {
+                  const totalQuantity = selectedOrder.orderQuantity * item.quantity;
+                  return `
+                    <tr>
+                      <td class="text-center">${item.processSequence}</td>
+                      <td>${item.processName}</td>
+                      <td>${item.materialCode}</td>
+                      <td><strong>${item.materialName}</strong></td>
+                      <td class="text-right">${item.quantity.toLocaleString()} ${item.unit}</td>
+                      <td class="text-right"><strong>${totalQuantity.toLocaleString()} ${item.unit}</strong></td>
+                      <td class="text-right">${item.lossRate}%</td>
+                      <td>${item.alternateMaterial || '-'}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        ` : ''}
+
+        <div class="footer">
+          <p>출력일시: ${new Date().toLocaleString('ko-KR')}</p>
+          <p>MES 시스템 - 작업지시서</p>
+        </div>
+
+        <script>
+          window.onload = function() {
+            window.print();
+            window.onafterprint = function() {
+              window.close();
+            };
+          };
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
   };
 
   return (
@@ -330,10 +643,16 @@ export default function WorkOrderPage() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-xl font-bold">작업지시 관리</h1>
-            <p className="text-sm text-gray-600 mt-1">생산 작업지시를 생성하고 관리합니다.</p>
+            <p className="text-sm text-gray-600 mt-1">현재일자가 종료일을 초과하지 않은 생산계획만 조회하여 작업지시를 생성하고 관리합니다.</p>
           </div>
           {hasEditPermission() && (
-            <div className="flex gap-2">
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-gray-600">
+                {searchTerm || planStatusFilter !== "all"
+                  ? `계획 ${filteredPlans.length}건`
+                  : `최신 ${Math.min(filteredPlans.length, 1000)}건 (전체: ${productionPlans.length}건)`
+                }
+              </div>
               <button
                 onClick={handleAddOrderFromPlan}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors w-32 disabled:bg-gray-300 disabled:cursor-not-allowed"
@@ -369,6 +688,14 @@ export default function WorkOrderPage() {
               >
                 📊 엑셀출력
               </button>
+              <button
+                onClick={handlePrintWorkOrder}
+                className="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors w-32 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                disabled={!selectedOrder}
+                title={!selectedOrder ? "출력할 작업지시를 선택해주세요" : "작업지시서 출력"}
+              >
+                🖨️ 지시서출력
+              </button>
             </div>
           )}
         </div>
@@ -396,28 +723,40 @@ export default function WorkOrderPage() {
             <option value="취소">취소</option>
           </select>
         </div>
+        {!searchTerm && planStatusFilter === "all" && (
+          <div className="mt-2 text-xs text-blue-600">
+            ℹ️ 종료일이 지나지 않은 생산계획 중 최신 1000건만 표시됩니다. 검색 조건을 지정하면 전체 조회됩니다.
+          </div>
+        )}
       </div>
 
-      {/* 4-Section Layout */}
-      <div className="grid gap-4" style={{ height: 'calc(100vh - 280px)', gridTemplateColumns: '3fr 2fr', gridTemplateRows: '1fr 1fr' }}>
-        {/* Top Left: Production Plans */}
-        <div className="bg-white rounded-lg border border-black/10 overflow-hidden flex flex-col">
-          <div className="px-4 py-3 bg-gray-50 border-b">
-            <h2 className="text-base font-semibold">생산계획 목록</h2>
+      {/* Collapsible Panels Layout */}
+      <div className="space-y-4">
+        {/* Panel 1: Production Plans */}
+        <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+          <div 
+            className="px-4 py-3 bg-gray-50 border-b cursor-pointer hover:bg-gray-100 transition-colors flex justify-between items-center"
+            onClick={() => togglePanel('plans')}
+          >
+            <h2 className="text-base font-semibold">📋 생산계획 목록 ({filteredPlans.length}건)</h2>
+            <button className="text-gray-600 hover:text-gray-900 transition-colors">
+              {expandedPanels.plans ? '▼' : '▶'}
+            </button>
           </div>
-          <div className="flex-1 overflow-auto">
-            <table className="w-full">
+          {expandedPanels.plans && (
+          <div className="overflow-auto" style={{ maxHeight: '400px' }}>
+            <table className="w-full compact-table">
               <thead className="bg-gray-50 sticky top-0">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">계획코드</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">제품명</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">거래처</th>
-                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-700">계획수량</th>
-                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-700">지시수량</th>
-                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-700">미지시수량</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">시작일</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">종료일</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">상태</th>
+                  <th className="text-left text-gray-700">계획코드</th>
+                  <th className="text-left text-gray-700">제품명</th>
+                  <th className="text-left text-gray-700">거래처</th>
+                  <th className="text-right text-gray-700">계획수량</th>
+                  <th className="text-right text-gray-700">지시수량</th>
+                  <th className="text-right text-gray-700">미지시수량</th>
+                  <th className="text-left text-gray-700">시작일</th>
+                  <th className="text-left text-gray-700">종료일</th>
+                  <th className="text-left text-gray-700">상태</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -449,19 +788,19 @@ export default function WorkOrderPage() {
                           selectedPlan?.id === plan.id ? "bg-blue-50" : ""
                         }`}
                       >
-                        <td className="px-3 py-2 text-xs">{plan.planCode}</td>
-                        <td className="px-3 py-2 text-xs font-medium">{plan.productName}</td>
-                        <td className="px-3 py-2 text-xs">{customerName}</td>
-                        <td className="px-3 py-2 text-xs text-right">{plan.planQuantity.toLocaleString()} {plan.unit}</td>
-                        <td className="px-3 py-2 text-xs text-right">{totalOrderQty.toLocaleString()} {plan.unit}</td>
-                        <td className="px-3 py-2 text-xs text-right">
+                        <td>{plan.planCode}</td>
+                        <td className="font-medium">{plan.productName}</td>
+                        <td>{customerName}</td>
+                        <td className="text-right">{plan.planQuantity.toLocaleString()} {plan.unit}</td>
+                        <td className="text-right">{totalOrderQty.toLocaleString()} {plan.unit}</td>
+                        <td className="text-right">
                           <span className={remainingQty > 0 ? "text-orange-600 font-medium" : "text-gray-500"}>
                             {remainingQty.toLocaleString()} {plan.unit}
                           </span>
                         </td>
-                        <td className="px-3 py-2 text-xs">{plan.startDate}</td>
-                        <td className="px-3 py-2 text-xs">{plan.endDate}</td>
-                        <td className="px-3 py-2 text-xs">
+                        <td>{plan.startDate}</td>
+                        <td>{plan.endDate}</td>
+                        <td>
                           <span
                             className={`px-2 py-0.5 rounded text-xs ${
                               plan.status === "계획"
@@ -483,77 +822,32 @@ export default function WorkOrderPage() {
               </tbody>
             </table>
           </div>
+          )}
         </div>
 
-        {/* Top Right: Routing Steps */}
-        <div className="bg-white rounded-lg border border-black/10 overflow-hidden flex flex-col">
-          <div className="px-4 py-3 bg-gray-50 border-b">
-            <h2 className="text-base font-semibold">공정 라우팅 리스트</h2>
+        {/* Panel 2: Work Orders */}
+        <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+          <div 
+            className="px-4 py-3 bg-gray-50 border-b cursor-pointer hover:bg-gray-100 transition-colors flex justify-between items-center"
+            onClick={() => togglePanel('orders')}
+          >
+            <h2 className="text-base font-semibold">📝 작업지시 목록 ({filteredOrders.length}건)</h2>
+            <button className="text-gray-600 hover:text-gray-900 transition-colors">
+              {expandedPanels.orders ? '▼' : '▶'}
+            </button>
           </div>
-          <div className="flex-1 overflow-auto">
-            {selectedOrder ? (
-              selectedOrderBOM ? (
-                <table className="w-full">
-                  <thead className="bg-gray-50 sticky top-0">
-                    <tr>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">순서</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">라인</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">공정</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">주설비</th>
-                      <th className="px-3 py-2 text-right text-xs font-medium text-gray-700">지시수량</th>
-                      <th className="px-3 py-2 text-right text-xs font-medium text-gray-700">표준공수</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {selectedRoutingSteps.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="px-3 py-6 text-center text-gray-500 text-sm">
-                          라우팅 정보가 없습니다.
-                        </td>
-                      </tr>
-                    ) : (
-                      selectedRoutingSteps.map((step) => (
-                        <tr key={step.id} className="hover:bg-gray-50">
-                          <td className="px-3 py-2 text-xs">{step.sequence}</td>
-                          <td className="px-3 py-2 text-xs">{step.line}</td>
-                          <td className="px-3 py-2 text-xs font-medium">{step.process}</td>
-                          <td className="px-3 py-2 text-xs">{step.mainEquipment}</td>
-                          <td className="px-3 py-2 text-xs text-right">{selectedOrder.orderQuantity ? selectedOrder.orderQuantity.toLocaleString() : '0'} {selectedOrder.unit}</td>
-                          <td className="px-3 py-2 text-xs text-right">{step.standardManHours}h</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              ) : (
-                <div className="p-6 text-center text-gray-500 text-sm">
-                  선택된 제품의 BOM 정보가 없습니다.
-                </div>
-              )
-            ) : (
-              <div className="p-6 text-center text-gray-500 text-sm">
-                작업지시를 선택하면 공정 라우팅이 표시됩니다.
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Bottom Left: Work Orders */}
-        <div className="bg-white rounded-lg border border-black/10 overflow-hidden flex flex-col">
-          <div className="px-4 py-3 bg-gray-50 border-b">
-            <h2 className="text-base font-semibold">작업지시 목록</h2>
-          </div>
-          <div className="flex-1 overflow-auto">
-            <table className="w-full">
+          {expandedPanels.orders && (
+          <div className="overflow-auto" style={{ maxHeight: '400px' }}>
+            <table className="w-full compact-table">
               <thead className="bg-gray-50 sticky top-0">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">지시코드</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">제품명</th>
-                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-700">지시수량</th>
-                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-700">실적수량</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">시작일</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">종료일</th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">상태</th>
+                  <th className="text-left text-gray-700">지시코드</th>
+                  <th className="text-left text-gray-700">제품명</th>
+                  <th className="text-right text-gray-700">지시수량</th>
+                  <th className="text-right text-gray-700">실적수량</th>
+                  <th className="text-left text-gray-700">시작일</th>
+                  <th className="text-left text-gray-700">종료일</th>
+                  <th className="text-left text-gray-700">상태</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -571,9 +865,7 @@ export default function WorkOrderPage() {
                   </tr>
                 ) : (
                   filteredOrders.map((order) => {
-                    // TODO: Calculate actual result quantity from production results
-                    const resultQuantity = 0; // Placeholder for actual production result
-                    
+                    const resultQuantity = 0;
                     return (
                       <tr
                         key={order.id}
@@ -582,17 +874,17 @@ export default function WorkOrderPage() {
                           selectedOrder?.id === order.id ? "bg-blue-50" : ""
                         }`}
                       >
-                        <td className="px-3 py-2 text-xs">{order.orderCode}</td>
-                        <td className="px-3 py-2 text-xs font-medium">{order.productName}</td>
-                        <td className="px-3 py-2 text-xs text-right">{order.orderQuantity ? order.orderQuantity.toLocaleString() : '0'} {order.unit}</td>
-                        <td className="px-3 py-2 text-xs text-right">
+                        <td>{order.orderCode}</td>
+                        <td className="font-medium">{order.productName}</td>
+                        <td className="text-right">{order.orderQuantity ? order.orderQuantity.toLocaleString() : '0'} {order.unit}</td>
+                        <td className="text-right">
                           <span className={resultQuantity > 0 ? "text-green-600 font-medium" : "text-gray-400"}>
                             {resultQuantity.toLocaleString()} {order.unit}
                           </span>
                         </td>
-                        <td className="px-3 py-2 text-xs">{order.startDate}</td>
-                        <td className="px-3 py-2 text-xs">{order.endDate}</td>
-                        <td className="px-3 py-2 text-xs">
+                        <td>{order.startDate}</td>
+                        <td>{order.endDate}</td>
+                        <td>
                           <span
                             className={`px-2 py-0.5 rounded text-xs ${
                               order.status === "대기"
@@ -614,56 +906,111 @@ export default function WorkOrderPage() {
               </tbody>
             </table>
           </div>
+          )}
         </div>
 
-        {/* Bottom Right: BOM Items */}
-        <div className="bg-white rounded-lg border border-black/10 overflow-hidden flex flex-col">
-          <div className="px-4 py-3 bg-gray-50 border-b">
-            <h2 className="text-base font-semibold">공정별 투입자재 리스트</h2>
+        {/* Panel 3: Routing Steps */}
+        <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+          <div 
+            className="px-4 py-3 bg-gray-50 border-b cursor-pointer hover:bg-gray-100 transition-colors flex justify-between items-center"
+            onClick={() => togglePanel('routing')}
+          >
+            <h2 className="text-base font-semibold">⚙️ 공정별 지시 {selectedOrder && `(${selectedRoutingSteps.length}건)`}</h2>
+            <button className="text-gray-600 hover:text-gray-900 transition-colors">
+              {expandedPanels.routing ? '▼' : '▶'}
+            </button>
           </div>
-          <div className="flex-1 overflow-auto">
+          {expandedPanels.routing && (
+          <div className="overflow-auto" style={{ maxHeight: '400px' }}>
             {selectedOrder ? (
-              selectedOrderBOM ? (
-                <table className="w-full">
+              selectedRoutingSteps.length > 0 ? (
+                <table className="w-full compact-table">
                   <thead className="bg-gray-50 sticky top-0">
                     <tr>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">공정순서</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">공정명</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">자재코드</th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-700">자재명</th>
-                      <th className="px-3 py-2 text-right text-xs font-medium text-gray-700">투입량</th>
-                      <th className="px-3 py-2 text-right text-xs font-medium text-gray-700">손실율</th>
+                      <th className="text-left text-gray-700">공정순서</th>
+                      <th className="text-left text-gray-700">라인</th>
+                      <th className="text-left text-gray-700">공정</th>
+                      <th className="text-left text-gray-700">주설비</th>
+                      <th className="text-right text-gray-700">지시수량</th>
+                      <th className="text-right text-gray-700">표준공수</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {selectedBOMItems.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="px-3 py-6 text-center text-gray-500 text-sm">
-                          자재 정보가 없습니다.
-                        </td>
+                    {selectedRoutingSteps.map((step) => (
+                      <tr key={step.id} className="hover:bg-gray-50">
+                        <td>{step.sequence}</td>
+                        <td>{step.line}</td>
+                        <td className="font-medium">{step.process}</td>
+                        <td>{step.mainEquipment}</td>
+                        <td className="text-right">{selectedOrder.orderQuantity ? selectedOrder.orderQuantity.toLocaleString() : '0'} {selectedOrder.unit}</td>
+                        <td className="text-right">{step.standardManHours}h</td>
                       </tr>
-                    ) : (
-                      selectedBOMItems.map((item) => {
-                        // Calculate input quantity: order quantity * required quantity
-                        const inputQuantity = selectedOrder.orderQuantity * item.quantity;
-                        
-                        return (
-                          <tr key={item.id} className="hover:bg-gray-50">
-                            <td className="px-3 py-2 text-xs">{item.processSequence}</td>
-                            <td className="px-3 py-2 text-xs">{item.processName}</td>
-                            <td className="px-3 py-2 text-xs">{item.materialCode}</td>
-                            <td className="px-3 py-2 text-xs font-medium">{item.materialName}</td>
-                            <td className="px-3 py-2 text-xs text-right">{inputQuantity.toLocaleString()} {item.unit}</td>
-                            <td className="px-3 py-2 text-xs text-right">{item.lossRate}%</td>
-                          </tr>
-                        );
-                      })
-                    )}
+                    ))}
                   </tbody>
                 </table>
               ) : (
                 <div className="p-6 text-center text-gray-500 text-sm">
-                  선택된 제품의 BOM 정보가 없습니다.
+                  이 작업지시에는 공정 라우팅 스냅샷이 없습니다.
+                  <br />
+                  (작업지시 생성 시 제품에 BOM이 없었거나 구버전 작업지시입니다)
+                </div>
+              )
+            ) : (
+              <div className="p-6 text-center text-gray-500 text-sm">
+                작업지시를 선택하면 공정 라우팅이 표시됩니다.
+              </div>
+            )}
+          </div>
+          )}
+        </div>
+
+        {/* Panel 4: BOM Items */}
+        <div className="bg-white rounded-lg border border-black/10 overflow-hidden">
+          <div 
+            className="px-4 py-3 bg-gray-50 border-b cursor-pointer hover:bg-gray-100 transition-colors flex justify-between items-center"
+            onClick={() => togglePanel('materials')}
+          >
+            <h2 className="text-base font-semibold">📦 투입자재 {selectedOrder && `(${selectedBOMItems.length}건)`}</h2>
+            <button className="text-gray-600 hover:text-gray-900 transition-colors">
+              {expandedPanels.materials ? '▼' : '▶'}
+            </button>
+          </div>
+          {expandedPanels.materials && (
+          <div className="overflow-auto" style={{ maxHeight: '400px' }}>
+            {selectedOrder ? (
+              selectedBOMItems.length > 0 ? (
+                <table className="w-full compact-table">
+                  <thead className="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th className="text-left text-gray-700">공정순서</th>
+                      <th className="text-left text-gray-700">공정명</th>
+                      <th className="text-left text-gray-700">자재코드</th>
+                      <th className="text-left text-gray-700">자재명</th>
+                      <th className="text-right text-gray-700">투입량</th>
+                      <th className="text-right text-gray-700">손실율</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {selectedBOMItems.map((item) => {
+                      const inputQuantity = selectedOrder.orderQuantity * item.quantity;
+                      return (
+                        <tr key={item.id} className="hover:bg-gray-50">
+                          <td>{item.processSequence}</td>
+                          <td>{item.processName}</td>
+                          <td>{item.materialCode}</td>
+                          <td className="font-medium">{item.materialName}</td>
+                          <td className="text-right">{inputQuantity.toLocaleString()} {item.unit}</td>
+                          <td className="text-right">{item.lossRate}%</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="p-6 text-center text-gray-500 text-sm">
+                  이 작업지시에는 자재 정보 스냅샷이 없습니다.
+                  <br />
+                  (작업지시 생성 시 제품에 BOM이 없었거나 구버전 작업지시입니다)
                 </div>
               )
             ) : (
@@ -672,6 +1019,7 @@ export default function WorkOrderPage() {
               </div>
             )}
           </div>
+          )}
         </div>
       </div>
 

@@ -14,8 +14,8 @@ export async function GET(request: NextRequest) {
         id, code, name, category, specification, unit, 
         purchase_price as purchasePrice,
         supplier, description, image, status, 
-        created_at as createdAt, 
-        modified_at as modifiedAt
+        FORMAT(created_at, 'yyyy-MM-dd HH:mm:ss') as createdAt, 
+        FORMAT(modified_at, 'yyyy-MM-dd HH:mm:ss') as modifiedAt
       FROM materials
       WHERE 1=1
     `;
@@ -98,8 +98,17 @@ export async function POST(request: NextRequest) {
       success: true,
       message: '자재가 추가되었습니다',
     }, { status: 201 });
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('자재 추가 에러:', error);
+    
+    // UNIQUE KEY 제약 조건 위반 (자재 코드 중복)
+    if (error?.number === 2627) {
+      return NextResponse.json({
+        success: false,
+        message: '이미 존재하는 자재 코드입니다. 다른 코드를 사용해주세요.',
+      }, { status: 400 });
+    }
+    
     return NextResponse.json({
       success: false,
       message: '자재 추가 실패',
@@ -164,8 +173,17 @@ export async function PUT(request: NextRequest) {
       success: true,
       message: '자재 정보가 수정되었습니다',
     });
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('자재 수정 에러:', error);
+    
+    // UNIQUE KEY 제약 조건 위반 (자재 코드 중복)
+    if (error?.number === 2627) {
+      return NextResponse.json({
+        success: false,
+        message: '이미 존재하는 자재 코드입니다. 다른 코드를 사용해주세요.',
+      }, { status: 400 });
+    }
+    
     return NextResponse.json({
       success: false,
       message: '자재 수정 실패',

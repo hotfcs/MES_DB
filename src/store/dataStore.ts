@@ -197,6 +197,18 @@ export type BOMItem = {
   alternateMaterial: string;
 };
 
+export type BOMRoutingStep = {
+  id: number;
+  bomId: number;
+  sequence: number;
+  line: string;
+  process: string;
+  mainEquipment: string;
+  standardManHours: number;
+  previousProcess: string;
+  nextProcess: string;
+};
+
 export type Warehouse = {
   id: number;
   code: string;
@@ -247,6 +259,31 @@ export type WorkOrder = {
   modifiedAt?: string;
 };
 
+export type WorkOrderRoutingStep = {
+  id: number;
+  workOrderId: number;
+  sequence: number;
+  line: string;
+  process: string;
+  mainEquipment: string;
+  standardManHours: number;
+  previousProcess: string;
+  nextProcess: string;
+};
+
+export type WorkOrderMaterial = {
+  id: number;
+  workOrderId: number;
+  processSequence: number;
+  processName: string;
+  materialCode: string;
+  materialName: string;
+  quantity: number;
+  unit: string;
+  lossRate: number;
+  alternateMaterial: string;
+};
+
 export type ProductionResult = {
   id: number;
   resultCode: string;
@@ -274,13 +311,46 @@ export type ProductionResult = {
 // ====================================
 
 async function fetchAPI(url: string, options?: RequestInit) {
-  const response = await fetch(url, options);
-  const data = await response.json();
+  console.log('🌐 API 호출:', options?.method || 'GET', url);
   
+  const response = await fetch(url, options);
+  
+  console.log('📡 응답 상태:', response.status, response.statusText);
+  
+  // 응답 텍스트 가져오기 (오류 응답도 JSON을 가질 수 있음)
+  const text = await response.text();
+  
+  // 빈 응답 처리
+  if (!text || text.trim().length === 0) {
+    if (!response.ok) {
+      if (response.status === 405) {
+        throw new Error(`HTTP 405: ${options?.method || 'GET'} 메서드가 ${url}에서 허용되지 않습니다.`);
+      }
+      throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
+    }
+    console.log('⚠️ 빈 응답 반환됨');
+    return null;
+  }
+  
+  // JSON 파싱
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (error) {
+    console.error('❌ JSON 파싱 오류:', text.substring(0, 200));
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
+    }
+    throw new Error('서버 응답을 파싱할 수 없습니다');
+  }
+  
+  // 응답 실패 처리 (성공하지 않은 경우)
   if (!data.success) {
+    console.log('ℹ️ API 검증:', data.message || data.error);
     throw new Error(data.message || data.error || 'API 요청 실패');
   }
   
+  console.log('✅ API 성공');
   return data.data;
 }
 
@@ -447,16 +517,22 @@ export function useProductsStore() {
 
 export function useWorkOrdersStore() {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
+  const [workOrderRoutingSteps, setWorkOrderRoutingSteps] = useState<WorkOrderRoutingStep[]>([]);
+  const [workOrderMaterials, setWorkOrderMaterials] = useState<WorkOrderMaterial[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchWorkOrders = async () => {
     try {
       setLoading(true);
       const data = await fetchAPI('/api/mes/work-orders');
-      setWorkOrders(data || []);
+      setWorkOrders(data?.workOrders || []);
+      setWorkOrderRoutingSteps(data?.workOrderRoutingSteps || []);
+      setWorkOrderMaterials(data?.workOrderMaterials || []);
     } catch (error) {
       console.error('작업지시 조회 실패:', error);
       setWorkOrders([]);
+      setWorkOrderRoutingSteps([]);
+      setWorkOrderMaterials([]);
     } finally {
       setLoading(false);
     }
@@ -487,13 +563,25 @@ export function useWorkOrdersStore() {
     await fetchWorkOrders();
   };
 
+  const getWorkOrderRoutingSteps = (workOrderId: number) => {
+    return workOrderRoutingSteps.filter(step => step.workOrderId === workOrderId);
+  };
+
+  const getWorkOrderMaterials = (workOrderId: number) => {
+    return workOrderMaterials.filter(material => material.workOrderId === workOrderId);
+  };
+
   useEffect(() => {
     fetchWorkOrders();
   }, []);
 
   return {
     workOrders,
+    workOrderRoutingSteps,
+    workOrderMaterials,
     loading,
+    getWorkOrderRoutingSteps,
+    getWorkOrderMaterials,
     addWorkOrder,
     updateWorkOrder,
     deleteWorkOrder,
@@ -846,7 +934,11 @@ export function useRoutingsStore() {
   };
 
   const saveRoutingSteps = async (routingId: number, steps: RoutingStep[]) => {
-    // 실제 구현은 API가 필요하지만 임시로 새로고침
+    await fetchAPI('/api/mes/routings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ routingId, steps })
+    });
     await fetchRoutings();
   };
 
@@ -871,6 +963,7 @@ export function useRoutingsStore() {
 export function useBOMsStore() {
   const [boms, setBoms] = useState<BOM[]>([]);
   const [bomItems, setBomItems] = useState<BOMItem[]>([]);
+  const [bomRoutingSteps, setBomRoutingSteps] = useState<BOMRoutingStep[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchBOMs = async () => {
@@ -879,10 +972,12 @@ export function useBOMsStore() {
       const result = await fetchAPI('/api/mes/boms');
       setBoms(result.boms || []);
       setBomItems(result.bomItems || []);
+      setBomRoutingSteps(result.bomRoutingSteps || []);
     } catch (error) {
       console.error('BOM 조회 실패:', error);
       setBoms([]);
       setBomItems([]);
+      setBomRoutingSteps([]);
     } finally {
       setLoading(false);
     }
@@ -892,8 +987,16 @@ export function useBOMsStore() {
     return bomItems.filter(item => item.bomId === bomId);
   };
 
+  const getBOMRoutingStepsByBOMId = (bomId: number) => {
+    return bomRoutingSteps.filter(step => step.bomId === bomId);
+  };
+
   const saveBOMItems = async (bomId: number, items: BOMItem[]) => {
-    // 실제 구현은 API가 필요하지만 임시로 새로고침
+    await fetchAPI('/api/mes/boms', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bomId, items })
+    });
     await fetchBOMs();
   };
 
@@ -901,9 +1004,11 @@ export function useBOMsStore() {
 
   return {
     boms, 
-    bomItems, 
+    bomItems,
+    bomRoutingSteps,
     loading,
     getBOMItemsByBOMId,
+    getBOMRoutingStepsByBOMId,
     saveBOMItems,
     addBOM: async (bom: Omit<BOM, 'id' | 'createdAt' | 'modifiedAt'>) => { await fetchAPI('/api/mes/boms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bom) }); await fetchBOMs(); },
     updateBOM: async () => { await fetchBOMs(); },

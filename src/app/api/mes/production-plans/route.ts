@@ -8,18 +8,18 @@ export async function GET() {
       SELECT 
         id, 
         plan_code as planCode, 
-        plan_date as planDate, 
+        FORMAT(plan_date, 'yyyy-MM-dd') as planDate, 
         product_code as productCode, 
         product_name as productName, 
         plan_quantity as planQuantity, 
         unit, 
-        start_date as startDate, 
-        end_date as endDate, 
+        FORMAT(start_date, 'yyyy-MM-dd') as startDate, 
+        FORMAT(end_date, 'yyyy-MM-dd') as endDate, 
         status, 
         manager, 
         note, 
-        created_at as createdAt, 
-        modified_at as modifiedAt 
+        FORMAT(created_at, 'yyyy-MM-dd HH:mm:ss') as createdAt, 
+        FORMAT(modified_at, 'yyyy-MM-dd HH:mm:ss') as modifiedAt 
       FROM production_plans 
       ORDER BY plan_date DESC
     `;
@@ -94,6 +94,66 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error' 
+    }, { status: 500 });
+  }
+}
+
+// PUT: 생산계획 수정
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { id, planCode, planDate, productCode, productName, planQuantity, unit, startDate, endDate, status, manager, note } = body;
+
+    if (!id) {
+      return NextResponse.json({
+        success: false,
+        message: 'id는 필수입니다',
+      }, { status: 400 });
+    }
+
+    const query = `
+      UPDATE production_plans
+      SET 
+        plan_code = @planCode,
+        plan_date = @planDate,
+        product_code = @productCode,
+        product_name = @productName,
+        plan_quantity = @planQuantity,
+        unit = @unit,
+        start_date = @startDate,
+        end_date = @endDate,
+        status = @status,
+        manager = @manager,
+        note = @note,
+        modified_at = GETDATE()
+      WHERE id = @id
+    `;
+
+    await executeNonQuery(query, {
+      id,
+      planCode,
+      planDate,
+      productCode,
+      productName,
+      planQuantity,
+      unit: unit || 'EA',
+      startDate,
+      endDate,
+      status: status || '계획',
+      manager: manager || '',
+      note: note || ''
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: '생산계획이 수정되었습니다',
+    });
+  } catch (error: unknown) {
+    console.error('생산계획 수정 에러:', error);
+    return NextResponse.json({
+      success: false,
+      message: '생산계획 수정 실패',
+      error: error instanceof Error ? error.message : 'Unknown error',
     }, { status: 500 });
   }
 }

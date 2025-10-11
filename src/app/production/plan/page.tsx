@@ -57,18 +57,28 @@ export default function ProductionPlanPage() {
     return permissions.includes("PRODUCTION_PLAN_EDIT") || permissions.includes('ALL');
   };
 
-  const filteredPlans = productionPlans.filter(plan => {
-    // Get customer for the product
-    const product = products.find((p: Product) => p.code === plan.productCode);
-    const customerName = product?.customer || "";
-    
-    const matchesSearch = 
-      (plan.productName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-      customerName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || plan.status === statusFilter;
-    const matchesDate = !dateFilter || plan.planDate === dateFilter;
-    return matchesSearch && matchesStatus && matchesDate;
-  });
+  const filteredPlans = (() => {
+    // 먼저 모든 필터 적용
+    let filtered = productionPlans.filter(plan => {
+      // Get customer for the product
+      const product = products.find((p: Product) => p.code === plan.productCode);
+      const customerName = product?.customer || "";
+      
+      const matchesSearch = 
+        (plan.productName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        customerName.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === "all" || plan.status === statusFilter;
+      const matchesDate = !dateFilter || plan.planDate === dateFilter;
+      return matchesSearch && matchesStatus && matchesDate;
+    });
+
+    // 날짜 필터가 없으면 최신 1000건만 반환
+    if (!dateFilter) {
+      filtered = filtered.slice(0, 1000);
+    }
+
+    return filtered;
+  })();
 
   const handleProductSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const productCode = e.target.value;
@@ -174,8 +184,8 @@ export default function ProductionPlanPage() {
         "상태": plan.status,
         "담당자": plan.manager,
         "비고": plan.note,
-        "생성일": plan.createdAt,
-        "수정일": plan.modifiedAt || "-"
+        "생성일시": plan.createdAt,
+        "수정일시": plan.modifiedAt || "-"
       };
     });
     const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -194,7 +204,13 @@ export default function ProductionPlanPage() {
             <p className="text-sm text-gray-600 mt-1">제품 생산 계획을 수립하고 관리합니다.</p>
           </div>
           {hasEditPermission() && (
-            <div className="flex gap-2">
+            <div className="flex items-center gap-3">
+              <div className="text-sm text-gray-600">
+                {dateFilter 
+                  ? `총 ${filteredPlans.length}건` 
+                  : `최신 ${Math.min(filteredPlans.length, 1000)}건 (전체: ${productionPlans.length}건)`
+                }
+              </div>
               <button
                 onClick={() => setShowAddModal(true)}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors w-32"
@@ -254,14 +270,31 @@ export default function ProductionPlanPage() {
             <option value="완료">완료</option>
             <option value="취소">취소</option>
           </select>
-          <input
-            type="date"
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="계획일 선택"
-          />
+          <div className="flex gap-2">
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              title="날짜를 선택하지 않으면 최신 1000건만 표시됩니다"
+              placeholder="계획일 선택"
+            />
+            {dateFilter && (
+              <button
+                onClick={() => setDateFilter("")}
+                className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                title="날짜 필터 초기화"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
+        {!dateFilter && (
+          <div className="mt-2 text-xs text-blue-600">
+            ℹ️ 계획일을 선택하지 않았습니다. 최신 1000건만 표시됩니다.
+          </div>
+        )}
       </div>
 
       {/* Main Grid and Detail Info */}
@@ -272,12 +305,12 @@ export default function ProductionPlanPage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">계획코드</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">계획일</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">제품명</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">거래처</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">계획수량</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">상태</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">계획코드</th>
+                  <th className="hidden xl:table-cell px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">계획일</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">제품명</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">거래처</th>
+                  <th className="px-4 py-3 text-right text-sm font-medium text-gray-700 whitespace-nowrap">계획수량</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">상태</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -302,7 +335,7 @@ export default function ProductionPlanPage() {
                         }`}
                       >
                         <td className="px-4 py-3 text-sm">{plan.planCode}</td>
-                        <td className="px-4 py-3 text-sm">{plan.planDate}</td>
+                        <td className="hidden xl:table-cell px-4 py-3 text-sm">{plan.planDate}</td>
                         <td className="px-4 py-3 text-sm font-medium">{plan.productName}</td>
                         <td className="px-4 py-3 text-sm">{customerName}</td>
                         <td className="px-4 py-3 text-sm text-right">{plan.planQuantity ? plan.planQuantity.toLocaleString() : '0'} {plan.unit}</td>
@@ -394,11 +427,11 @@ export default function ProductionPlanPage() {
                 <p className="text-sm mt-1">{selectedPlan.note || "-"}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">생성일</label>
+                <label className="text-sm font-medium text-gray-700">생성일시</label>
                 <p className="text-sm mt-1">{selectedPlan.createdAt}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">수정일</label>
+                <label className="text-sm font-medium text-gray-700">수정일시</label>
                 <p className="text-sm mt-1">{selectedPlan.modifiedAt || "-"}</p>
               </div>
             </div>

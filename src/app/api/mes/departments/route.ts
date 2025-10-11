@@ -11,8 +11,8 @@ export async function GET(request: NextRequest) {
     let query = `
       SELECT 
         id, name, code, manager, description, status, 
-        created_at as createdAt, 
-        modified_at as modifiedAt
+        FORMAT(created_at, 'yyyy-MM-dd HH:mm:ss') as createdAt, 
+        FORMAT(modified_at, 'yyyy-MM-dd HH:mm:ss') as modifiedAt
       FROM departments
       WHERE 1=1
     `;

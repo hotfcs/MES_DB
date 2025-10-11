@@ -6,8 +6,8 @@ export async function GET(request: NextRequest) {
     const query = `
       SELECT 
         id, code, name, location, capacity, manager, description, status, 
-        created_at as createdAt, 
-        modified_at as modifiedAt 
+        FORMAT(created_at, 'yyyy-MM-dd HH:mm:ss') as createdAt, 
+        FORMAT(modified_at, 'yyyy-MM-dd HH:mm:ss') as modifiedAt 
       FROM lines 
       ORDER BY created_at DESC
     `;

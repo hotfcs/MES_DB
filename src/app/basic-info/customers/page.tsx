@@ -17,6 +17,21 @@ export default function CustomersPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
+  
+  // 실시간 검증 에러 상태
+  const [validationErrors, setValidationErrors] = useState<{
+    code?: string;
+    name?: string;
+    type?: string;
+  }>({});
+  
+  const [editValidationErrors, setEditValidationErrors] = useState<{
+    code?: string;
+    name?: string;
+    type?: string;
+  }>({});
+  
   const [newCustomer, setNewCustomer] = useState<{
     code: string;
     name: string;
@@ -62,6 +77,81 @@ export default function CustomersPage() {
     return permissions.includes("CUSTOMERS_EDIT") || permissions.includes('ALL');
   };
 
+  // 실시간 검증 함수
+  const validateNewCustomer = (field: string, value: any) => {
+    const errors: typeof validationErrors = { ...validationErrors };
+    
+    if (field === 'code') {
+      if (!value || value.trim() === '') {
+        errors.code = '거래처 코드는 필수입니다.';
+      } else if (customers.some(c => c.code === value)) {
+        errors.code = '이미 존재하는 코드입니다.';
+      } else {
+        delete errors.code;
+      }
+    }
+    
+    if (field === 'name') {
+      if (!value || value.trim() === '') {
+        errors.name = '거래처명은 필수입니다.';
+      } else {
+        delete errors.name;
+      }
+    }
+    
+    if (field === 'type') {
+      if (!value) {
+        errors.type = '거래처 구분은 필수입니다.';
+      } else {
+        delete errors.type;
+      }
+    }
+    
+    setValidationErrors(errors);
+  };
+  
+  const validateEditCustomer = (field: string, value: any, currentId: number) => {
+    const errors: typeof editValidationErrors = { ...editValidationErrors };
+    
+    if (field === 'code') {
+      if (!value || value.trim() === '') {
+        errors.code = '거래처 코드는 필수입니다.';
+      } else if (customers.some(c => c.code === value && c.id !== currentId)) {
+        errors.code = '이미 존재하는 코드입니다.';
+      } else {
+        delete errors.code;
+      }
+    }
+    
+    if (field === 'name') {
+      if (!value || value.trim() === '') {
+        errors.name = '거래처명은 필수입니다.';
+      } else {
+        delete errors.name;
+      }
+    }
+    
+    if (field === 'type') {
+      if (!value) {
+        errors.type = '거래처 구분은 필수입니다.';
+      } else {
+        delete errors.type;
+      }
+    }
+    
+    setEditValidationErrors(errors);
+  };
+  
+  const isNewCustomerValid = () => {
+    return newCustomer.code && newCustomer.name && newCustomer.type && 
+           Object.keys(validationErrors).length === 0;
+  };
+  
+  const isEditCustomerValid = () => {
+    return editingCustomer?.code && editingCustomer?.name && editingCustomer?.type && 
+           Object.keys(editValidationErrors).length === 0;
+  };
+
   const filteredCustomers = customers.filter((customer: Customer) => {
     const matchesSearch = 
       customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -73,31 +163,86 @@ export default function CustomersPage() {
     return matchesSearch && matchesType && matchesStatus;
   });
 
-  const handleAddCustomer = () => {
-    addCustomer(newCustomer);
-    setShowAddModal(false);
-    setNewCustomer({
-      code: "",
-      name: "",
-      type: "고객사",
-      representative: "",
-      businessNumber: "",
-      phone: "",
-      email: "",
-      address: "",
-      manager: "",
-      managerPhone: "",
-      status: "active"
-    });
+  const handleAddCustomer = async () => {
+    // 필수 항목 검증
+    if (!newCustomer.code || !newCustomer.code.trim()) {
+      setNotification({ type: 'error', message: '거래처 코드는 필수입니다.' });
+      return;
+    }
+    if (!newCustomer.name || !newCustomer.name.trim()) {
+      setNotification({ type: 'error', message: '거래처명은 필수입니다.' });
+      return;
+    }
+    if (!newCustomer.type) {
+      setNotification({ type: 'error', message: '거래처 구분은 필수입니다.' });
+      return;
+    }
+    
+    // 코드 중복 검증
+    if (customers.some(c => c.code === newCustomer.code)) {
+      setNotification({ type: 'error', message: '이미 존재하는 거래처 코드입니다. 다른 코드를 사용해주세요.' });
+      return;
+    }
+    
+    try {
+      await addCustomer(newCustomer);
+      setShowAddModal(false);
+      setValidationErrors({});
+      setNewCustomer({
+        code: "",
+        name: "",
+        type: "고객사",
+        representative: "",
+        businessNumber: "",
+        phone: "",
+        email: "",
+        address: "",
+        manager: "",
+        managerPhone: "",
+        status: "active"
+      });
+      setNotification({ type: 'success', message: '거래처가 추가되었습니다.' });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error: any) {
+      setNotification({ type: 'error', message: error.message || '거래처 추가에 실패했습니다.' });
+    }
   };
 
-  const handleUpdateCustomer = () => {
+  const handleUpdateCustomer = async () => {
     if (!editingCustomer) return;
-    updateCustomer(editingCustomer.id, editingCustomer);
-    setShowEditModal(false);
-    setEditingCustomer(null);
-    if (selectedCustomer?.id === editingCustomer.id) {
-      setSelectedCustomer(editingCustomer);
+    
+    // 필수 항목 검증
+    if (!editingCustomer.code || !editingCustomer.code.trim()) {
+      setNotification({ type: 'error', message: '거래처 코드는 필수입니다.' });
+      return;
+    }
+    if (!editingCustomer.name || !editingCustomer.name.trim()) {
+      setNotification({ type: 'error', message: '거래처명은 필수입니다.' });
+      return;
+    }
+    if (!editingCustomer.type) {
+      setNotification({ type: 'error', message: '거래처 구분은 필수입니다.' });
+      return;
+    }
+    
+    // 코드 중복 검증 (자신 제외)
+    if (customers.some(c => c.code === editingCustomer.code && c.id !== editingCustomer.id)) {
+      setNotification({ type: 'error', message: '이미 존재하는 거래처 코드입니다. 다른 코드를 사용해주세요.' });
+      return;
+    }
+    
+    try {
+      await updateCustomer(editingCustomer.id, editingCustomer);
+      setShowEditModal(false);
+      setEditingCustomer(null);
+      setEditValidationErrors({});
+      if (selectedCustomer?.id === editingCustomer.id) {
+        setSelectedCustomer(editingCustomer);
+      }
+      setNotification({ type: 'success', message: '거래처 정보가 수정되었습니다.' });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error: any) {
+      setNotification({ type: 'error', message: error.message || '거래처 수정에 실패했습니다.' });
     }
   };
 
@@ -111,7 +256,7 @@ export default function CustomersPage() {
 
   const handleExportExcel = () => {
     const worksheetData = [
-      ["거래처코드", "거래처명", "거래처구분", "대표자명", "사업자번호", "전화번호", "이메일", "주소", "담당자", "담당자연락처", "사용유무", "생성일"],
+      ["거래처코드", "거래처명", "거래처구분", "대표자명", "사업자번호", "전화번호", "이메일", "주소", "담당자", "담당자연락처", "사용유무", "생성일시"],
       ...filteredCustomers.map((customer: Customer) => [
         customer.code,
         customer.name,
@@ -158,6 +303,7 @@ export default function CustomersPage() {
                     return;
                   }
                   setEditingCustomer({ ...selectedCustomer });
+                  setEditValidationErrors({});
                   setShowEditModal(true);
                 }}
                 className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors w-32"
@@ -221,13 +367,13 @@ export default function CustomersPage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">거래처코드</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">거래처명</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">거래처구분</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">대표자명</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">담당자</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">연락처</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">사용유무</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">거래처코드</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">거래처명</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">거래처구분</th>
+                  <th className="hidden xl:table-cell px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">대표자명</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">담당자</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">연락처</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">사용유무</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -257,7 +403,7 @@ export default function CustomersPage() {
                           {customer.type}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm">{customer.representative}</td>
+                      <td className="hidden xl:table-cell px-4 py-3 text-sm">{customer.representative}</td>
                       <td className="px-4 py-3 text-sm">{customer.manager}</td>
                       <td className="px-4 py-3 text-sm">{customer.phone}</td>
                       <td className="px-4 py-3 text-sm">
@@ -331,11 +477,11 @@ export default function CustomersPage() {
                 </p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">생성일</label>
+                <label className="text-sm font-medium text-gray-700">생성일시</label>
                 <p className="text-sm mt-1">{selectedCustomer.createdAt}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">수정일</label>
+                <label className="text-sm font-medium text-gray-700">수정일시</label>
                 <p className="text-sm mt-1">{selectedCustomer.modifiedAt || "-"}</p>
               </div>
             </div>
@@ -359,23 +505,43 @@ export default function CustomersPage() {
                 <input
                   type="text"
                   value={newCustomer.code}
-                  onChange={(e) => setNewCustomer({ ...newCustomer, code: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => {
+                    setNewCustomer({ ...newCustomer, code: e.target.value });
+                    validateNewCustomer('code', e.target.value);
+                  }}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                    validationErrors.code 
+                      ? 'border-red-500 focus:ring-red-500' 
+                      : 'border-gray-300 focus:ring-blue-500'
+                  }`}
                   placeholder="예: CUST001"
                 />
+                {validationErrors.code && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.code}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">거래처명 *</label>
                 <input
                   type="text"
                   value={newCustomer.name}
-                  onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => {
+                    setNewCustomer({ ...newCustomer, name: e.target.value });
+                    validateNewCustomer('name', e.target.value);
+                  }}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                    validationErrors.name 
+                      ? 'border-red-500 focus:ring-red-500' 
+                      : 'border-gray-300 focus:ring-blue-500'
+                  }`}
                   placeholder="예: (주)삼성전자"
                 />
+                {validationErrors.name && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
+                )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">거래처구분</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">거래처구분 *</label>
                 <select
                   value={newCustomer.type}
                   onChange={(e) => setNewCustomer({ ...newCustomer, type: e.target.value as Customer["type"] })}
@@ -460,12 +626,16 @@ export default function CustomersPage() {
               <div className="flex gap-2 mt-6">
                 <button
                   onClick={handleAddCustomer}
-                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  disabled={!isNewCustomerValid()}
+                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   추가
                 </button>
                 <button
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setValidationErrors({});
+                  }}
                   className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
                 >
                   취소
@@ -488,21 +658,41 @@ export default function CustomersPage() {
                 <input
                   type="text"
                   value={editingCustomer.code}
-                  onChange={(e) => setEditingCustomer({ ...editingCustomer, code: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => {
+                    setEditingCustomer({ ...editingCustomer, code: e.target.value });
+                    validateEditCustomer('code', e.target.value, editingCustomer.id);
+                  }}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                    editValidationErrors.code 
+                      ? 'border-red-500 focus:ring-red-500' 
+                      : 'border-gray-300 focus:ring-blue-500'
+                  }`}
                 />
+                {editValidationErrors.code && (
+                  <p className="mt-1 text-sm text-red-600">{editValidationErrors.code}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">거래처명 *</label>
                 <input
                   type="text"
                   value={editingCustomer.name}
-                  onChange={(e) => setEditingCustomer({ ...editingCustomer, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => {
+                    setEditingCustomer({ ...editingCustomer, name: e.target.value });
+                    validateEditCustomer('name', e.target.value, editingCustomer.id);
+                  }}
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                    editValidationErrors.name 
+                      ? 'border-red-500 focus:ring-red-500' 
+                      : 'border-gray-300 focus:ring-blue-500'
+                  }`}
                 />
+                {editValidationErrors.name && (
+                  <p className="mt-1 text-sm text-red-600">{editValidationErrors.name}</p>
+                )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">거래처구분</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">거래처구분 *</label>
                 <select
                   value={editingCustomer.type}
                   onChange={(e) => setEditingCustomer({ ...editingCustomer, type: e.target.value as Customer["type"] })}
@@ -591,7 +781,8 @@ export default function CustomersPage() {
               <div className="flex gap-2 mt-6">
                 <button
                   onClick={handleUpdateCustomer}
-                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                  disabled={!isEditCustomerValid()}
+                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   수정
                 </button>
@@ -599,12 +790,34 @@ export default function CustomersPage() {
                   onClick={() => {
                     setShowEditModal(false);
                     setEditingCustomer(null);
+                    setEditValidationErrors({});
                   }}
                   className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
                 >
                   취소
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notification */}
+      {notification && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div className={`px-6 py-4 rounded-lg shadow-xl pointer-events-auto ${
+            notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+          }`}>
+            <div className="flex items-center gap-3">
+              <span className="text-lg font-medium">{notification.message}</span>
+              {notification.type === 'error' && (
+                <button
+                  onClick={() => setNotification(null)}
+                  className="ml-2 text-white hover:text-gray-200 text-xl"
+                >
+                  ✕
+                </button>
+              )}
             </div>
           </div>
         </div>

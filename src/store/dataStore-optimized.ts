@@ -197,6 +197,18 @@ export type BOMItem = {
   alternateMaterial: string;
 };
 
+export type BOMRoutingStep = {
+  id: number;
+  bomId: number;
+  sequence: number;
+  line: string;
+  process: string;
+  mainEquipment: string;
+  standardManHours: number;
+  previousProcess: string;
+  nextProcess: string;
+};
+
 export type Warehouse = {
   id: number;
   code: string;
@@ -247,6 +259,31 @@ export type WorkOrder = {
   modifiedAt?: string;
 };
 
+export type WorkOrderRoutingStep = {
+  id: number;
+  workOrderId: number;
+  sequence: number;
+  line: string;
+  process: string;
+  mainEquipment: string;
+  standardManHours: number;
+  previousProcess: string;
+  nextProcess: string;
+};
+
+export type WorkOrderMaterial = {
+  id: number;
+  workOrderId: number;
+  processSequence: number;
+  processName: string;
+  materialCode: string;
+  materialName: string;
+  quantity: number;
+  unit: string;
+  lossRate: number;
+  alternateMaterial: string;
+};
+
 export type ProductionResult = {
   id: number;
   resultCode: string;
@@ -274,6 +311,8 @@ export type ProductionResult = {
 // ====================================
 
 async function fetchAPI(url: string, options?: RequestInit) {
+  console.log('🌐 API 호출:', options?.method || 'GET', url);
+  
   const response = await fetch(url, {
     ...options,
     headers: {
@@ -282,12 +321,42 @@ async function fetchAPI(url: string, options?: RequestInit) {
     },
   });
   
-  const data = await response.json();
+  console.log('📡 응답 상태:', response.status, response.statusText);
   
+  // 응답 텍스트 가져오기 (오류 응답도 JSON을 가질 수 있음)
+  const text = await response.text();
+  
+  // 빈 응답 처리
+  if (!text || text.trim().length === 0) {
+    if (!response.ok) {
+      if (response.status === 405) {
+        throw new Error(`HTTP 405: ${options?.method || 'GET'} 메서드가 ${url}에서 허용되지 않습니다.`);
+      }
+      throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
+    }
+    console.log('⚠️ 빈 응답 반환됨');
+    return null;
+  }
+  
+  // JSON 파싱
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (error) {
+    console.error('❌ JSON 파싱 오류:', text.substring(0, 200));
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status} ${response.statusText}`);
+    }
+    throw new Error('서버 응답을 파싱할 수 없습니다');
+  }
+  
+  // 응답 실패 처리 (성공하지 않은 경우)
   if (!data.success) {
+    console.log('ℹ️ API 검증:', data.message || data.error);
     throw new Error(data.message || data.error || 'API 요청 실패');
   }
   
+  console.log('✅ API 성공');
   return data.data;
 }
 

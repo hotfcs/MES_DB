@@ -87,7 +87,7 @@ export default function DepartmentsPage() {
 
   const handleExportExcel = () => {
     const worksheetData = [
-      ["부서코드", "부서명", "담당자", "설명", "사용유무", "생성일"],
+      ["부서코드", "부서명", "담당자", "설명", "사용유무", "생성일시"],
       ...filteredDepartments.map(dept => [
         dept.code,
         dept.name,
@@ -188,11 +188,11 @@ export default function DepartmentsPage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">부서코드</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">부서명</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">담당자</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">설명</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">사용유무</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">부서코드</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">부서명</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">담당자</th>
+                  <th className="hidden xl:table-cell px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">설명</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">사용유무</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -209,7 +209,7 @@ export default function DepartmentsPage() {
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">{dept.name}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{dept.manager}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600 max-w-xs truncate">{dept.description}</td>
+                    <td className="hidden xl:table-cell px-4 py-3 text-sm text-gray-600 max-w-xs truncate">{dept.description}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                         dept.status === "active"
@@ -265,11 +265,11 @@ export default function DepartmentsPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">생성일</label>
+                  <label className="text-sm font-medium text-gray-600">생성일시</label>
                   <div className="text-sm text-gray-900">{selectedDepartment.createdAt}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">수정일</label>
+                  <label className="text-sm font-medium text-gray-600">수정일시</label>
                   <div className="text-sm text-gray-900">{selectedDepartment.modifiedAt || "수정 이력 없음"}</div>
                 </div>
               </div>

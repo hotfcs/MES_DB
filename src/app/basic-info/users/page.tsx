@@ -16,6 +16,77 @@ export default function UsersPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
+  
+  // 실시간 검증 에러 상태
+  const [validationErrors, setValidationErrors] = useState<{
+    account?: string; password?: string; name?: string; role?: string; department?: string;
+  }>({});
+  const [editValidationErrors, setEditValidationErrors] = useState<{
+    account?: string; password?: string; name?: string; role?: string; department?: string;
+  }>({});
+  
+  // 실시간 검증 함수
+  const validateNewUser = (field: string, value: any) => {
+    const errors = { ...validationErrors };
+    if (field === 'account') {
+      if (!value?.trim()) errors.account = '사용자 계정은 필수입니다.';
+      else if (users.some(u => u.account === value)) errors.account = '이미 존재하는 계정입니다.';
+      else delete errors.account;
+    }
+    if (field === 'password') {
+      if (!value?.trim()) errors.password = '비밀번호는 필수입니다.';
+      else delete errors.password;
+    }
+    if (field === 'name') {
+      if (!value?.trim()) errors.name = '사용자명은 필수입니다.';
+      else delete errors.name;
+    }
+    if (field === 'role') {
+      if (!value) errors.role = '사용자권한은 필수입니다.';
+      else delete errors.role;
+    }
+    if (field === 'department') {
+      if (!value?.trim()) errors.department = '부서는 필수입니다.';
+      else delete errors.department;
+    }
+    setValidationErrors(errors);
+  };
+  
+  const validateEditUser = (field: string, value: any, currentId: number) => {
+    const errors = { ...editValidationErrors };
+    if (field === 'account') {
+      if (!value?.trim()) errors.account = '사용자 계정은 필수입니다.';
+      else if (users.some(u => u.account === value && u.id !== currentId)) errors.account = '이미 존재하는 계정입니다.';
+      else delete errors.account;
+    }
+    if (field === 'password') {
+      if (!value?.trim()) errors.password = '비밀번호는 필수입니다.';
+      else delete errors.password;
+    }
+    if (field === 'name') {
+      if (!value?.trim()) errors.name = '사용자명은 필수입니다.';
+      else delete errors.name;
+    }
+    if (field === 'role') {
+      if (!value) errors.role = '사용자권한은 필수입니다.';
+      else delete errors.role;
+    }
+    if (field === 'department') {
+      if (!value?.trim()) errors.department = '부서는 필수입니다.';
+      else delete errors.department;
+    }
+    setEditValidationErrors(errors);
+  };
+  
+  const isNewUserValid = () => {
+    return newUser.account && newUser.password && newUser.name && newUser.role && newUser.department && Object.keys(validationErrors).length === 0;
+  };
+  
+  const isEditUserValid = () => {
+    return editingUser?.account && editingUser?.password && editingUser?.name && editingUser?.role && editingUser?.department && Object.keys(editValidationErrors).length === 0;
+  };
+  
   const [newUser, setNewUser] = useState({
     account: "",
     password: "",
@@ -61,9 +132,58 @@ export default function UsersPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const handleAddUser = () => {
-    // Required: account, password, name, role, department
-    if (newUser.account && newUser.password && newUser.name && newUser.role && newUser.department) {
+  const handleAddUser = async () => {
+    // 필수 항목 검증
+    if (!newUser.account || !newUser.account.trim()) {
+      setNotification({ type: 'error', message: '사용자 계정은 필수입니다.' });
+      return;
+    }
+    if (!newUser.password || !newUser.password.trim()) {
+      setNotification({ type: 'error', message: '비밀번호는 필수입니다.' });
+      return;
+    }
+    if (!newUser.name || !newUser.name.trim()) {
+      setNotification({ type: 'error', message: '사용자명은 필수입니다.' });
+      return;
+    }
+    if (!newUser.role) {
+      setNotification({ type: 'error', message: '사용자권한은 필수입니다.' });
+      return;
+    }
+    if (!newUser.department || !newUser.department.trim()) {
+      setNotification({ type: 'error', message: '부서는 필수입니다.' });
+      return;
+    }
+    
+    // 계정 중복 검증
+    if (users.some(u => u.account === newUser.account)) {
+      setNotification({ type: 'error', message: '이미 존재하는 사용자 계정입니다. 다른 계정명을 사용해주세요.' });
+      return;
+    }
+    
+    try {
+      let imageUrl = newUser.image;
+      
+      // Base64 이미지인 경우 Azure Blob Storage에 업로드
+      if (imageUrl && imageUrl.startsWith('data:image/')) {
+        const uploadResponse = await fetch('/api/upload-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image: imageUrl,
+            fileName: `user-${newUser.account}${Date.now()}.jpg`,
+          }),
+        });
+        
+        const result = await uploadResponse.json();
+        if (result.success) {
+          imageUrl = result.data.url;
+        } else {
+          setNotification({ type: 'error', message: '이미지 업로드 실패: ' + result.message });
+          return;
+        }
+      }
+      
       addUser({
         account: newUser.account,
         password: newUser.password || "",
@@ -74,7 +194,7 @@ export default function UsersPage() {
         phone: newUser.phone,
         email: newUser.email || "",
         status: newUser.status,
-        image: newUser.image,
+        image: imageUrl,
         lastLogin: "신규",
         joinDate: newUser.joinDate || new Date().toISOString().split('T')[0],
         resignDate: newUser.resignDate
@@ -94,19 +214,80 @@ export default function UsersPage() {
         resignDate: ""
       });
       setShowAddModal(false);
+      setValidationErrors({});
+      setNotification({ type: 'success', message: '사용자가 추가되었습니다.' });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error: any) {
+      console.error('사용자 추가 오류:', error);
+      setNotification({ type: 'error', message: error.message || '사용자 추가에 실패했습니다.' });
     }
   };
 
-  const handleEditUser = () => {
-    if (editingUser) {
-      // Guard: ensure required fields exist before save
-      if (!editingUser.account || !editingUser.password || !editingUser.name || !editingUser.role || !editingUser.department) {
+  const handleEditUser = async () => {
+    if (!editingUser) return;
+    
+    // 필수 항목 검증
+    if (!editingUser.account || !editingUser.account.trim()) {
+      setNotification({ type: 'error', message: '사용자 계정은 필수입니다.' });
+      return;
+    }
+    if (!editingUser.password || !editingUser.password.trim()) {
+      setNotification({ type: 'error', message: '비밀번호는 필수입니다.' });
+      return;
+    }
+    if (!editingUser.name || !editingUser.name.trim()) {
+      setNotification({ type: 'error', message: '사용자명은 필수입니다.' });
+      return;
+    }
+    if (!editingUser.role) {
+      setNotification({ type: 'error', message: '사용자권한은 필수입니다.' });
+      return;
+    }
+    if (!editingUser.department || !editingUser.department.trim()) {
+      setNotification({ type: 'error', message: '부서는 필수입니다.' });
+      return;
+    }
+    
+    // 계정 중복 검증 (자신 제외)
+    if (users.some(u => u.account === editingUser.account && u.id !== editingUser.id)) {
+      setNotification({ type: 'error', message: '이미 존재하는 사용자 계정입니다. 다른 계정명을 사용해주세요.' });
+      return;
+    }
+    
+    try {
+      let imageUrl = editingUser.image;
+      
+      // Base64 이미지인 경우 Azure Blob Storage에 업로드
+      if (imageUrl && imageUrl.startsWith('data:image/')) {
+        const uploadResponse = await fetch('/api/upload-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image: imageUrl,
+            fileName: `user-${editingUser.account}${Date.now()}.jpg`,
+          }),
+        });
+        
+        const result = await uploadResponse.json();
+        if (result.success) {
+            imageUrl = result.data.url;
+          } else {
+            setNotification({ type: 'error', message: '이미지 업로드 실패: ' + result.message });
         return;
       }
-      updateUser(editingUser.id, editingUser);
+        }
+        
+        const updatedUser = { ...editingUser, image: imageUrl };
+        updateUser(updatedUser.id, updatedUser);
       setEditingUser(null);
       setShowEditModal(false);
-      setSelectedUser(editingUser);
+        setEditValidationErrors({});
+        setSelectedUser(updatedUser);
+        setNotification({ type: 'success', message: '사용자 정보가 수정되었습니다.' });
+        setTimeout(() => setNotification(null), 3000);
+      } catch (error: any) {
+        console.error('사용자 수정 오류:', error);
+        setNotification({ type: 'error', message: error.message || '사용자 수정에 실패했습니다.' });
     }
   };
 
@@ -169,6 +350,7 @@ export default function UsersPage() {
                 onClick={() => {
                   if (selectedUser) {
                     setEditingUser(selectedUser);
+                    setEditValidationErrors({});
                     setShowEditModal(true);
                   }
                 }}
@@ -232,16 +414,16 @@ export default function UsersPage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">사용자계정</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">사용자명</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">사용자권한</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">부서</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">직급</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">전화번호</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">이메일</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">입사일</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">퇴사일</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">사용유무</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">사용자계정</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">사용자명</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">사용자권한</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">부서</th>
+                  <th className="hidden xl:table-cell px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">직급</th>
+                  <th className="hidden px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">전화번호</th>
+                  <th className="hidden px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">이메일</th>
+                  <th className="hidden 2xl:table-cell px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">입사일</th>
+                  <th className="hidden 2xl:table-cell px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">퇴사일</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">사용유무</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -257,11 +439,11 @@ export default function UsersPage() {
                     <td className="px-4 py-3 text-sm text-gray-600">{user.name}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{user.role}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{user.department}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{user.position}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{user.phone}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{user.email}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{user.joinDate || "-"}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{user.resignDate || "-"}</td>
+                    <td className="hidden xl:table-cell px-4 py-3 text-sm text-gray-600">{user.position}</td>
+                    <td className="hidden px-4 py-3 text-sm text-gray-600">{user.phone}</td>
+                    <td className="hidden px-4 py-3 text-sm text-gray-600">{user.email}</td>
+                    <td className="hidden 2xl:table-cell px-4 py-3 text-sm text-gray-600">{user.joinDate || "-"}</td>
+                    <td className="hidden 2xl:table-cell px-4 py-3 text-sm text-gray-600">{user.resignDate || "-"}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                         user.status === "active"
@@ -289,6 +471,7 @@ export default function UsersPage() {
                 <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center text-xl font-bold text-gray-600 relative">
                   {selectedUser.image ? (
                     <img 
+                      key={selectedUser.id}
                       src={selectedUser.image} 
                       alt={selectedUser.name}
                       className="w-full h-full rounded-full object-cover"
@@ -363,11 +546,11 @@ export default function UsersPage() {
                   <div className="text-sm text-gray-900">{selectedUser.resignDate || "정보 없음"}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">생성일</label>
+                  <label className="text-sm font-medium text-gray-600">생성일시</label>
                   <div className="text-sm text-gray-900">{selectedUser.createdAt || "정보 없음"}</div>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-600">수정일</label>
+                  <label className="text-sm font-medium text-gray-600">수정일시</label>
                   <div className="text-sm text-gray-900">{selectedUser.modifiedAt || "수정 이력 없음"}</div>
                 </div>
               </div>
@@ -542,12 +725,16 @@ export default function UsersPage() {
               <div className="flex gap-2 mt-6">
                 <button
                   onClick={handleAddUser}
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  disabled={!isNewUserValid()}
+                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   추가
                 </button>
                 <button
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setValidationErrors({});
+                  }}
                   className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition-colors"
                 >
                   취소
@@ -718,7 +905,8 @@ export default function UsersPage() {
               <div className="flex gap-2 mt-6">
                 <button
                   onClick={handleEditUser}
-                  className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors"
+                  disabled={!isEditUserValid()}
+                  className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   수정
                 </button>
@@ -726,12 +914,34 @@ export default function UsersPage() {
                   onClick={() => {
                     setShowEditModal(false);
                     setEditingUser(null);
+                    setEditValidationErrors({});
                   }}
                   className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition-colors"
                 >
                   취소
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notification */}
+      {notification && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div className={`px-6 py-4 rounded-lg shadow-xl pointer-events-auto ${
+            notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+          }`}>
+            <div className="flex items-center gap-3">
+              <span className="text-lg font-medium">{notification.message}</span>
+              {notification.type === 'error' && (
+                <button
+                  onClick={() => setNotification(null)}
+                  className="ml-2 text-white hover:text-gray-200 text-xl"
+                >
+                  ✕
+                </button>
+              )}
             </div>
           </div>
         </div>

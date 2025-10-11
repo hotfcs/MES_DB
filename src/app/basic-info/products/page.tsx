@@ -21,6 +21,57 @@ export default function ProductsPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
+  
+  // 실시간 검증 에러 상태
+  const [validationErrors, setValidationErrors] = useState<{code?: string; name?: string; category?: string}>({});
+  const [editValidationErrors, setEditValidationErrors] = useState<{code?: string; name?: string; category?: string}>({});
+  
+  // 실시간 검증 함수
+  const validateNewProduct = (field: string, value: any) => {
+    const errors = { ...validationErrors };
+    if (field === 'code') {
+      if (!value?.trim()) errors.code = '제품 코드는 필수입니다.';
+      else if (products.some(p => p.code === value)) errors.code = '이미 존재하는 코드입니다.';
+      else delete errors.code;
+    }
+    if (field === 'name') {
+      if (!value?.trim()) errors.name = '제품명은 필수입니다.';
+      else delete errors.name;
+    }
+    if (field === 'category') {
+      if (!value) errors.category = '품목구분은 필수입니다.';
+      else delete errors.category;
+    }
+    setValidationErrors(errors);
+  };
+  
+  const validateEditProduct = (field: string, value: any, currentId: number) => {
+    const errors = { ...editValidationErrors };
+    if (field === 'code') {
+      if (!value?.trim()) errors.code = '제품 코드는 필수입니다.';
+      else if (products.some(p => p.code === value && p.id !== currentId)) errors.code = '이미 존재하는 코드입니다.';
+      else delete errors.code;
+    }
+    if (field === 'name') {
+      if (!value?.trim()) errors.name = '제품명은 필수입니다.';
+      else delete errors.name;
+    }
+    if (field === 'category') {
+      if (!value) errors.category = '품목구분은 필수입니다.';
+      else delete errors.category;
+    }
+    setEditValidationErrors(errors);
+  };
+  
+  const isNewProductValid = () => {
+    return newProduct.code && newProduct.name && newProduct.category && Object.keys(validationErrors).length === 0;
+  };
+  
+  const isEditProductValid = () => {
+    return editingProduct?.code && editingProduct?.name && editingProduct?.category && Object.keys(editValidationErrors).length === 0;
+  };
+  
   const [newProduct, setNewProduct] = useState<{
     code: string;
     name: string;
@@ -77,9 +128,53 @@ export default function ProductsPage() {
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  const handleAddProduct = () => {
-    addProduct(newProduct);
+  const handleAddProduct = async () => {
+    // 필수 항목 검증
+    if (!newProduct.code || !newProduct.code.trim()) {
+      setNotification({ type: 'error', message: '제품 코드는 필수입니다.' });
+      return;
+    }
+    if (!newProduct.name || !newProduct.name.trim()) {
+      setNotification({ type: 'error', message: '제품명은 필수입니다.' });
+      return;
+    }
+    if (!newProduct.category) {
+      setNotification({ type: 'error', message: '품목구분은 필수입니다.' });
+      return;
+    }
+    
+    // 코드 중복 검증
+    if (products.some(p => p.code === newProduct.code)) {
+      setNotification({ type: 'error', message: '이미 존재하는 제품 코드입니다. 다른 코드를 사용해주세요.' });
+      return;
+    }
+    
+    try {
+      let imageUrl = newProduct.image;
+      
+      // Base64 이미지인 경우 Azure Blob Storage에 업로드
+      if (imageUrl && imageUrl.startsWith('data:image/')) {
+        const uploadResponse = await fetch('/api/upload-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image: imageUrl,
+            fileName: `product-${newProduct.code}${Date.now()}.jpg`,
+          }),
+        });
+        
+        const result = await uploadResponse.json();
+        if (result.success) {
+          imageUrl = result.data.url;
+        } else {
+          setNotification({ type: 'error', message: '이미지 업로드 실패: ' + result.message });
+          return;
+        }
+      }
+      
+      addProduct({ ...newProduct, image: imageUrl });
     setShowAddModal(false);
+      setValidationErrors({});
     setNewProduct({
       code: "",
       name: "",
@@ -93,15 +188,73 @@ export default function ProductsPage() {
       image: "",
       status: "active"
     });
+      setNotification({ type: 'success', message: '제품이 추가되었습니다.' });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error: any) {
+      console.error('제품 추가 오류:', error);
+      setNotification({ type: 'error', message: error.message || '제품 추가에 실패했습니다.' });
+    }
   };
 
-  const handleUpdateProduct = () => {
+  const handleUpdateProduct = async () => {
     if (!editingProduct) return;
-    updateProduct(editingProduct.id, editingProduct);
+    
+    // 필수 항목 검증
+    if (!editingProduct.code || !editingProduct.code.trim()) {
+      setNotification({ type: 'error', message: '제품 코드는 필수입니다.' });
+      return;
+    }
+    if (!editingProduct.name || !editingProduct.name.trim()) {
+      setNotification({ type: 'error', message: '제품명은 필수입니다.' });
+      return;
+    }
+    if (!editingProduct.category) {
+      setNotification({ type: 'error', message: '품목구분은 필수입니다.' });
+      return;
+    }
+    
+    // 코드 중복 검증 (자신 제외)
+    if (products.some(p => p.code === editingProduct.code && p.id !== editingProduct.id)) {
+      setNotification({ type: 'error', message: '이미 존재하는 제품 코드입니다. 다른 코드를 사용해주세요.' });
+      return;
+    }
+    
+    try {
+      let imageUrl = editingProduct.image;
+      
+      // Base64 이미지인 경우 Azure Blob Storage에 업로드
+      if (imageUrl && imageUrl.startsWith('data:image/')) {
+        const uploadResponse = await fetch('/api/upload-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image: imageUrl,
+            fileName: `product-${editingProduct.code}${Date.now()}.jpg`,
+          }),
+        });
+        
+        const result = await uploadResponse.json();
+        if (result.success) {
+          imageUrl = result.data.url;
+        } else {
+          setNotification({ type: 'error', message: '이미지 업로드 실패: ' + result.message });
+          return;
+        }
+      }
+      
+      const updatedProduct = { ...editingProduct, image: imageUrl };
+      updateProduct(updatedProduct.id, updatedProduct);
     setShowEditModal(false);
     setEditingProduct(null);
-    if (selectedProduct?.id === editingProduct.id) {
-      setSelectedProduct(editingProduct);
+      setEditValidationErrors({});
+      if (selectedProduct?.id === updatedProduct.id) {
+        setSelectedProduct(updatedProduct);
+      }
+      setNotification({ type: 'success', message: '제품 정보가 수정되었습니다.' });
+      setTimeout(() => setNotification(null), 3000);
+    } catch (error: any) {
+      console.error('제품 수정 오류:', error);
+      setNotification({ type: 'error', message: error.message || '제품 수정에 실패했습니다.' });
     }
   };
 
@@ -115,7 +268,7 @@ export default function ProductsPage() {
 
   const handleExportExcel = () => {
     const worksheetData = [
-      ["제품코드", "제품명", "품목구분", "규격", "단위", "표준원가", "판매단가", "고객사", "설명", "사용유무", "생성일"],
+      ["제품코드", "제품명", "품목구분", "규격", "단위", "표준원가", "판매단가", "고객사", "설명", "사용유무", "생성일시"],
       ...filteredProducts.map((product: Product) => [
         product.code,
         product.name,
@@ -161,6 +314,7 @@ export default function ProductsPage() {
                     return;
                   }
                   setEditingProduct({ ...selectedProduct });
+                  setEditValidationErrors({});
                   setShowEditModal(true);
                 }}
                 className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors w-32"
@@ -224,14 +378,14 @@ export default function ProductsPage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">제품코드</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">제품명</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">품목구분</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">규격</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">단위</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">고객사</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">판매단가</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">사용유무</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">제품코드</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">제품명</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">품목구분</th>
+                  <th className="hidden xl:table-cell px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">규격</th>
+                  <th className="hidden 2xl:table-cell px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">단위</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">고객사</th>
+                  <th className="px-4 py-3 text-right text-sm font-medium text-gray-700 whitespace-nowrap">판매단가</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">사용유무</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -245,7 +399,13 @@ export default function ProductsPage() {
                   filteredProducts.map((product: Product) => (
                     <tr
                       key={product.id}
-                      onClick={() => setSelectedProduct(product)}
+                      onClick={() => {
+                        console.log('🔵 제품 클릭됨:', product.code, product.name);
+                        console.log('📸 이미지 URL:', product.image);
+                        console.log('📏 URL 길이:', product.image?.length || 0);
+                        console.log('🆔 제품 ID:', product.id);
+                        setSelectedProduct(product);
+                      }}
                       className={`cursor-pointer hover:bg-gray-50 transition-colors ${
                         selectedProduct?.id === product.id ? "bg-blue-50" : ""
                       }`}
@@ -261,8 +421,8 @@ export default function ProductsPage() {
                           {product.category}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm">{product.specification}</td>
-                      <td className="px-4 py-3 text-sm">{product.unit}</td>
+                      <td className="hidden xl:table-cell px-4 py-3 text-sm">{product.specification}</td>
+                      <td className="hidden 2xl:table-cell px-4 py-3 text-sm">{product.unit}</td>
                       <td className="px-4 py-3 text-sm">{product.customer}</td>
                       <td className="px-4 py-3 text-sm text-right">{product.sellingPrice ? product.sellingPrice.toLocaleString() : '0'}원</td>
                       <td className="px-4 py-3 text-sm">
@@ -291,12 +451,25 @@ export default function ProductsPage() {
             <div className="space-y-4">
               {/* 제품 이미지 */}
               <div className="w-full aspect-square rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                {(() => {
+                  console.log('🖼️ 이미지 렌더링 시작');
+                  console.log('📍 selectedProduct.id:', selectedProduct.id);
+                  console.log('📍 selectedProduct.image:', selectedProduct.image);
+                  console.log('📍 image 존재 여부:', !!selectedProduct.image);
+                  return null;
+                })()}
                 {selectedProduct.image ? (
                   <img
+                    key={selectedProduct.id}
                     src={selectedProduct.image}
                     alt={selectedProduct.name}
                     className="w-full h-full object-cover"
+                    onLoad={() => {
+                      console.log('✅ 이미지 로드 성공:', selectedProduct.image);
+                    }}
                     onError={(e) => {
+                      console.error('❌ 이미지 로드 실패:', selectedProduct.image);
+                      console.error('❌ 에러 이벤트:', e);
                       const target = e.target as HTMLImageElement;
                       target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="400" height="400" fill="%23e5e7eb"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="14">이미지 로드 실패</text></svg>';
                     }}
@@ -351,11 +524,11 @@ export default function ProductsPage() {
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700">생성일</label>
+                  <label className="text-sm font-medium text-gray-700">생성일시</label>
                   <p className="text-sm mt-1">{selectedProduct.createdAt}</p>
                 </div>
                 <div className="col-span-2">
-                  <label className="text-sm font-medium text-gray-700">수정일</label>
+                  <label className="text-sm font-medium text-gray-700">수정일시</label>
                   <p className="text-sm mt-1">{selectedProduct.modifiedAt || "-"}</p>
                 </div>
               </div>
@@ -380,20 +553,32 @@ export default function ProductsPage() {
                   <input
                     type="text"
                     value={newProduct.code}
-                    onChange={(e) => setNewProduct({ ...newProduct, code: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => {
+                      setNewProduct({ ...newProduct, code: e.target.value });
+                      validateNewProduct('code', e.target.value);
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                      validationErrors.code ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                    }`}
                     placeholder="예: PROD001"
                   />
+                  {validationErrors.code && <p className="mt-1 text-sm text-red-600">{validationErrors.code}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">제품명 *</label>
                   <input
                     type="text"
                     value={newProduct.name}
-                    onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => {
+                      setNewProduct({ ...newProduct, name: e.target.value });
+                      validateNewProduct('name', e.target.value);
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                      validationErrors.name ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                    }`}
                     placeholder="예: 스마트폰 케이스"
                   />
+                  {validationErrors.name && <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">품목구분</label>
@@ -513,12 +698,16 @@ export default function ProductsPage() {
               <div className="flex gap-2 mt-6">
                 <button
                   onClick={handleAddProduct}
-                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  disabled={!isNewProductValid()}
+                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   추가
                 </button>
                 <button
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setValidationErrors({});
+                  }}
                   className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
                 >
                   취소
@@ -541,18 +730,30 @@ export default function ProductsPage() {
                   <input
                     type="text"
                     value={editingProduct.code}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, code: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => {
+                      setEditingProduct({ ...editingProduct, code: e.target.value });
+                      validateEditProduct('code', e.target.value, editingProduct.id);
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                      editValidationErrors.code ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                    }`}
                   />
+                  {editValidationErrors.code && <p className="mt-1 text-sm text-red-600">{editValidationErrors.code}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">제품명 *</label>
                   <input
                     type="text"
                     value={editingProduct.name}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => {
+                      setEditingProduct({ ...editingProduct, name: e.target.value });
+                      validateEditProduct('name', e.target.value, editingProduct.id);
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                      editValidationErrors.name ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                    }`}
                   />
+                  {editValidationErrors.name && <p className="mt-1 text-sm text-red-600">{editValidationErrors.name}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">품목구분</label>
@@ -678,7 +879,8 @@ export default function ProductsPage() {
               <div className="flex gap-2 mt-6">
                 <button
                   onClick={handleUpdateProduct}
-                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                  disabled={!isEditProductValid()}
+                  className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   수정
                 </button>
@@ -686,12 +888,34 @@ export default function ProductsPage() {
                   onClick={() => {
                     setShowEditModal(false);
                     setEditingProduct(null);
+                    setEditValidationErrors({});
                   }}
                   className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
                 >
                   취소
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notification */}
+      {notification && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div className={`px-6 py-4 rounded-lg shadow-xl pointer-events-auto ${
+            notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+          }`}>
+            <div className="flex items-center gap-3">
+              <span className="text-lg font-medium">{notification.message}</span>
+              {notification.type === 'error' && (
+                <button
+                  onClick={() => setNotification(null)}
+                  className="ml-2 text-white hover:text-gray-200 text-xl"
+                >
+                  ✕
+                </button>
+              )}
             </div>
           </div>
         </div>

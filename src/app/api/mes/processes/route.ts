@@ -8,8 +8,8 @@ export async function GET() {
         id, code, name, type, 
         standard_time as standardTime, 
         line, warehouse, description, status, 
-        created_at as createdAt, 
-        modified_at as modifiedAt 
+        FORMAT(created_at, 'yyyy-MM-dd HH:mm:ss') as createdAt, 
+        FORMAT(modified_at, 'yyyy-MM-dd HH:mm:ss') as modifiedAt 
       FROM processes 
       ORDER BY created_at DESC
     `;

@@ -84,7 +84,7 @@ export default function LinesPage() {
 
   const handleExportExcel = () => {
     const worksheetData = [
-      ["라인코드", "라인명", "위치", "생산능력(개/일)", "담당자", "설명", "사용유무", "생성일"],
+      ["라인코드", "라인명", "위치", "생산능력(개/일)", "담당자", "설명", "사용유무", "생성일시"],
       ...filteredLines.map(line => [
         line.code,
         line.name,
@@ -180,12 +180,12 @@ export default function LinesPage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">라인코드</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">라인명</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">위치</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">생산능력(개/일)</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">담당자</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">사용유무</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">라인코드</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">라인명</th>
+                  <th className="hidden xl:table-cell px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">위치</th>
+                  <th className="hidden 2xl:table-cell px-4 py-3 text-right text-sm font-medium text-gray-700 whitespace-nowrap">생산능력(개/일)</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">담당자</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">사용유무</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -206,8 +206,8 @@ export default function LinesPage() {
                     >
                       <td className="px-4 py-3 text-sm">{line.code}</td>
                       <td className="px-4 py-3 text-sm font-medium">{line.name}</td>
-                      <td className="px-4 py-3 text-sm">{line.location}</td>
-                      <td className="px-4 py-3 text-sm text-right">{line.capacity ? line.capacity.toLocaleString() : '0'}</td>
+                      <td className="hidden xl:table-cell px-4 py-3 text-sm">{line.location}</td>
+                      <td className="hidden 2xl:table-cell px-4 py-3 text-sm text-right">{line.capacity ? line.capacity.toLocaleString() : '0'}</td>
                       <td className="px-4 py-3 text-sm">{line.manager}</td>
                       <td className="px-4 py-3 text-sm">
                         <span

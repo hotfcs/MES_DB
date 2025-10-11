@@ -3,7 +3,14 @@ import { executeQuery, executeNonQuery } from '@/lib/db-queries';
 
 export async function GET() {
   try {
-    const routings = await executeQuery(`SELECT id, code, name, status, created_at, modified_at FROM routings ORDER BY created_at DESC`);
+    const routings = await executeQuery(`
+      SELECT 
+        id, code, name, status, 
+        FORMAT(created_at, 'yyyy-MM-dd HH:mm:ss') as created_at, 
+        FORMAT(modified_at, 'yyyy-MM-dd HH:mm:ss') as modified_at 
+      FROM routings 
+      ORDER BY created_at DESC
+    `);
     const stepsRaw = await executeQuery(`
       SELECT 
         id, 
@@ -42,6 +49,53 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true }, { status: 201 });
   } catch (error: unknown) {
     return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const { routingId, steps } = await request.json();
+    
+    if (!routingId || !steps) {
+      return NextResponse.json({ success: false, message: '라우팅ID와 단계 정보가 필요합니다.' }, { status: 400 });
+    }
+
+    // Transaction: Delete all existing steps and insert new ones
+    // Step 1: Delete existing steps for this routing
+    await executeNonQuery('DELETE FROM routing_steps WHERE routing_id = @routingId', { routingId });
+
+    // Step 2: Insert new steps
+    for (const step of steps) {
+      await executeNonQuery(
+        `INSERT INTO routing_steps 
+         (routing_id, sequence, line, process, main_equipment, standard_man_hours, previous_process, next_process) 
+         VALUES (@routingId, @sequence, @line, @process, @mainEquipment, @standardManHours, @previousProcess, @nextProcess)`,
+        {
+          routingId,
+          sequence: step.sequence,
+          line: step.line,
+          process: step.process,
+          mainEquipment: step.mainEquipment,
+          standardManHours: step.standardManHours,
+          previousProcess: step.previousProcess,
+          nextProcess: step.nextProcess
+        }
+      );
+    }
+
+    // Update routing's modified_at timestamp
+    await executeNonQuery(
+      'UPDATE routings SET modified_at = GETDATE() WHERE id = @routingId',
+      { routingId }
+    );
+
+    return NextResponse.json({ success: true, message: '라우팅 단계가 저장되었습니다.' });
+  } catch (error: unknown) {
+    console.error('라우팅 단계 저장 에러:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    }, { status: 500 });
   }
 }
 

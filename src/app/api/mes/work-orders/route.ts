@@ -14,20 +14,20 @@ export async function GET(request: NextRequest) {
       SELECT 
         id, 
         order_code as orderCode, 
-        order_date as orderDate, 
+        FORMAT(order_date, 'yyyy-MM-dd') as orderDate, 
         plan_code as planCode, 
         product_code as productCode, 
         product_name as productName,
         order_quantity as orderQuantity, 
         unit, 
         line, 
-        start_date as startDate, 
-        end_date as endDate, 
+        FORMAT(start_date, 'yyyy-MM-dd') as startDate, 
+        FORMAT(end_date, 'yyyy-MM-dd') as endDate, 
         status, 
         worker, 
         note,
-        created_at as createdAt, 
-        modified_at as modifiedAt
+        FORMAT(created_at, 'yyyy-MM-dd HH:mm:ss') as createdAt, 
+        FORMAT(modified_at, 'yyyy-MM-dd HH:mm:ss') as modifiedAt
       FROM work_orders
       WHERE 1=1
     `;
@@ -58,9 +58,45 @@ export async function GET(request: NextRequest) {
 
     const orders = await executeQuery(query, params);
 
+    // Get routing steps and materials for all work orders
+    const routingSteps = await executeQuery(`
+      SELECT 
+        id,
+        work_order_id as workOrderId,
+        sequence,
+        line,
+        process,
+        main_equipment as mainEquipment,
+        standard_man_hours as standardManHours,
+        previous_process as previousProcess,
+        next_process as nextProcess
+      FROM work_order_routing_steps
+      ORDER BY work_order_id, sequence
+    `);
+
+    const materials = await executeQuery(`
+      SELECT 
+        id,
+        work_order_id as workOrderId,
+        process_sequence as processSequence,
+        process_name as processName,
+        material_code as materialCode,
+        material_name as materialName,
+        quantity,
+        unit,
+        loss_rate as lossRate,
+        alternate_material as alternateMaterial
+      FROM work_order_materials
+      ORDER BY work_order_id, process_sequence
+    `);
+
     return NextResponse.json({
       success: true,
-      data: orders,
+      data: {
+        workOrders: orders,
+        workOrderRoutingSteps: routingSteps,
+        workOrderMaterials: materials
+      },
       count: orders.length,
     });
   } catch (error: unknown) {
@@ -100,20 +136,20 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const query = `
+    // Step 1: Insert work order and get ID
+    const result = await executeQuery(`
       INSERT INTO work_orders (
         order_code, order_date, plan_code, product_code, product_name,
         order_quantity, unit, line, start_date, end_date,
         status, worker, note, created_at
       )
+      OUTPUT INSERTED.id
       VALUES (
         @orderCode, @orderDate, @planCode, @productCode, @productName,
         @orderQuantity, @unit, @line, @startDate, @endDate,
         @status, @worker, @note, GETDATE()
       )
-    `;
-
-    await executeNonQuery(query, {
+    `, {
       orderCode,
       orderDate,
       planCode: planCode || '',
@@ -129,9 +165,101 @@ export async function POST(request: NextRequest) {
       note: note || ''
     });
 
+    const workOrderId = result[0]?.id;
+
+    if (!workOrderId) {
+      throw new Error('작업지시 ID를 가져올 수 없습니다.');
+    }
+
+    // Step 2: Find the latest BOM revision for this product
+    const latestBOM = await executeQuery(`
+      SELECT TOP 1 id, revision
+      FROM boms
+      WHERE product_code = @productCode AND status = 'active'
+      ORDER BY 
+        CAST(SUBSTRING(revision, 5, LEN(revision) - 4) AS INT) DESC,
+        created_at DESC
+    `, { productCode });
+
+    if (latestBOM && latestBOM.length > 0) {
+      const bomId = latestBOM[0].id;
+      console.log(`📋 제품 ${productCode}의 최종 BOM: ${latestBOM[0].revision} (ID: ${bomId})`);
+
+      // Step 3: Copy BOM routing steps to work order routing steps
+      const bomRoutingSteps = await executeQuery(`
+        SELECT 
+          sequence, line, process, main_equipment as mainEquipment,
+          standard_man_hours as standardManHours,
+          previous_process as previousProcess,
+          next_process as nextProcess
+        FROM bom_routing_steps
+        WHERE bom_id = @bomId
+        ORDER BY sequence
+      `, { bomId });
+
+      for (const step of bomRoutingSteps) {
+        await executeNonQuery(`
+          INSERT INTO work_order_routing_steps 
+          (work_order_id, sequence, line, process, main_equipment, standard_man_hours, previous_process, next_process, created_at)
+          VALUES (@workOrderId, @sequence, @line, @process, @mainEquipment, @standardManHours, @previousProcess, @nextProcess, GETDATE())
+        `, {
+          workOrderId,
+          sequence: step.sequence,
+          line: step.line,
+          process: step.process,
+          mainEquipment: step.mainEquipment,
+          standardManHours: step.standardManHours,
+          previousProcess: step.previousProcess,
+          nextProcess: step.nextProcess
+        });
+      }
+
+      console.log(`✅ 라우팅 단계 ${bomRoutingSteps.length}개 스냅샷 저장됨`);
+
+      // Step 4: Copy BOM items (materials) to work order materials
+      const bomItems = await executeQuery(`
+        SELECT 
+          process_sequence as processSequence,
+          process_name as processName,
+          material_code as materialCode,
+          material_name as materialName,
+          quantity,
+          unit,
+          loss_rate as lossRate,
+          alternate_material as alternateMaterial
+        FROM bom_items
+        WHERE bom_id = @bomId
+        ORDER BY process_sequence
+      `, { bomId });
+
+      for (const item of bomItems) {
+        await executeNonQuery(`
+          INSERT INTO work_order_materials 
+          (work_order_id, process_sequence, process_name, material_code, material_name, quantity, unit, loss_rate, alternate_material, created_at)
+          VALUES (@workOrderId, @processSequence, @processName, @materialCode, @materialName, @quantity, @unit, @lossRate, @alternateMaterial, GETDATE())
+        `, {
+          workOrderId,
+          processSequence: item.processSequence,
+          processName: item.processName,
+          materialCode: item.materialCode,
+          materialName: item.materialName,
+          quantity: item.quantity,
+          unit: item.unit,
+          lossRate: item.lossRate || 0,
+          alternateMaterial: item.alternateMaterial || ''
+        });
+      }
+
+      console.log(`✅ 자재 정보 ${bomItems.length}개 스냅샷 저장됨`);
+      console.log(`🎉 작업지시 ${workOrderId} 생성 완료 (BOM: ${latestBOM[0].revision})`);
+    } else {
+      console.log(`⚠️ 제품 ${productCode}의 BOM이 없습니다. 작업지시만 생성됨.`);
+    }
+
     return NextResponse.json({
       success: true,
       message: '작업지시가 추가되었습니다',
+      data: { workOrderId }
     }, { status: 201 });
   } catch (error: unknown) {
     console.error('작업지시 추가 에러:', error);

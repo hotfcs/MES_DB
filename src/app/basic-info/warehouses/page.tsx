@@ -103,8 +103,8 @@ export default function WarehousesPage() {
       "담당자": warehouse.manager,
       "설명": warehouse.description,
       "사용유무": warehouse.status === "active" ? "사용" : "미사용",
-      "생성일": warehouse.createdAt,
-      "수정일": warehouse.modifiedAt || "-"
+      "생성일시": warehouse.createdAt,
+      "수정일시": warehouse.modifiedAt || "-"
     }));
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
@@ -204,13 +204,13 @@ export default function WarehousesPage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">창고코드</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">창고명</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">창고유형</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">위치</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-gray-700">보관용량(㎡)</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">담당자</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">사용유무</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">창고코드</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">창고명</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">창고유형</th>
+                  <th className="hidden xl:table-cell px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">위치</th>
+                  <th className="hidden 2xl:table-cell px-4 py-3 text-right text-sm font-medium text-gray-700 whitespace-nowrap">보관용량(㎡)</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">담당자</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 whitespace-nowrap">사용유무</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -232,8 +232,8 @@ export default function WarehousesPage() {
                       <td className="px-4 py-3 text-sm">{warehouse.code}</td>
                       <td className="px-4 py-3 text-sm font-medium">{warehouse.name}</td>
                       <td className="px-4 py-3 text-sm">{warehouse.type}</td>
-                      <td className="px-4 py-3 text-sm">{warehouse.location}</td>
-                      <td className="px-4 py-3 text-sm text-right">{warehouse.capacity ? warehouse.capacity.toLocaleString() : '0'}</td>
+                      <td className="hidden xl:table-cell px-4 py-3 text-sm">{warehouse.location}</td>
+                      <td className="hidden 2xl:table-cell px-4 py-3 text-sm text-right">{warehouse.capacity ? warehouse.capacity.toLocaleString() : '0'}</td>
                       <td className="px-4 py-3 text-sm">{warehouse.manager}</td>
                       <td className="px-4 py-3 text-sm">
                         <span
@@ -294,11 +294,11 @@ export default function WarehousesPage() {
                 <p className="text-sm mt-1">{selectedWarehouse.description}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">생성일</label>
+                <label className="text-sm font-medium text-gray-700">생성일시</label>
                 <p className="text-sm mt-1">{selectedWarehouse.createdAt}</p>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">수정일</label>
+                <label className="text-sm font-medium text-gray-700">수정일시</label>
                 <p className="text-sm mt-1">{selectedWarehouse.modifiedAt || "-"}</p>
               </div>
             </div>
