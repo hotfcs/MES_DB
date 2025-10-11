@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useProductsStore, type Product, useCustomersStore, type Customer } from "@/store/dataStore-optimized";
 import { useAuth } from "@/store/authStore";
 import { useRolesStore } from "@/store/dataStore-optimized";
@@ -450,7 +451,7 @@ export default function ProductsPage() {
           {selectedProduct ? (
             <div className="space-y-4">
               {/* 제품 이미지 */}
-              <div className="w-full aspect-square rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+              <div className="w-full aspect-square rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center border-2 border-gray-200 relative">
                 {(() => {
                   console.log('🖼️ 이미지 렌더링 시작');
                   console.log('📍 selectedProduct.id:', selectedProduct.id);
@@ -459,11 +460,12 @@ export default function ProductsPage() {
                   return null;
                 })()}
                 {selectedProduct.image ? (
-                  <img
+                  <Image
                     key={selectedProduct.id}
                     src={selectedProduct.image}
                     alt={selectedProduct.name}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
                     onLoad={() => {
                       console.log('✅ 이미지 로드 성공:', selectedProduct.image);
                     }}
@@ -661,11 +663,12 @@ export default function ProductsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">제품 이미지</label>
                   {newProduct.image && (
                     <div className="mb-3">
-                      <div className="relative inline-block">
-                        <img
+                      <div className="relative inline-block w-32 h-32">
+                        <Image
                           src={newProduct.image}
                           alt="제품 이미지"
-                          className="w-32 h-32 rounded-lg object-cover border-2 border-gray-300"
+                          fill
+                          className="rounded-lg object-cover border-2 border-gray-300"
                         />
                         <button
                           type="button"
@@ -831,11 +834,12 @@ export default function ProductsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">제품 이미지</label>
                   {editingProduct.image && (
                     <div className="mb-3">
-                      <div className="relative inline-block">
-                        <img
+                      <div className="relative inline-block w-32 h-32">
+                        <Image
                           src={editingProduct.image}
                           alt="제품 이미지"
-                          className="w-32 h-32 rounded-lg object-cover border-2 border-gray-300"
+                          fill
+                          className="rounded-lg object-cover border-2 border-gray-300"
                         />
                         <button
                           type="button"
