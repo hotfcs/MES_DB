@@ -27,7 +27,7 @@ export default function AzureSqlApiPage() {
       const res = await fetch('/api/test-connection');
       const data = await res.json();
       setConnectionStatus(data.success ? '✅ 연결됨' : '❌ 연결 실패');
-    } catch (err) {
+    } catch {
       setConnectionStatus('❌ 연결 실패');
     }
   };

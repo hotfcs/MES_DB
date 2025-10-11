@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useAuth } from "@/store/authStore";
 
 interface TopbarProps {
@@ -80,11 +81,13 @@ export default function Topbar({ onToggleSidebar }: TopbarProps) {
             >
               로그아웃
             </button>
-            <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100">
+            <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-100 relative">
               {user.image ? (
-                <img
+                <Image
                   src={user.image}
                   alt={user.name}
+                  width={32}
+                  height={32}
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;

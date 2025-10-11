@@ -1095,7 +1095,7 @@ export function useProductionResultsStore() {
 }
 
 // 기본 export (하위 호환성)
-export default {
+const dataStoreHooks = {
   useUsersStore,
   useLoginHistoryStore,
   useProductsStore,
@@ -1113,3 +1113,5 @@ export default {
   useProductionPlansStore,
   useProductionResultsStore,
 };
+
+export default dataStoreHooks;

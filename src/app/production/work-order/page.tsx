@@ -34,9 +34,6 @@ export default function WorkOrderPage() {
   const { productionPlans, updateProductionPlan } = useProductionPlansStore();
   const { products } = useProductsStore();
   const { lines } = useLinesStore();
-  const { boms, bomItems } = useBOMsStore();
-  const { routings, routingSteps } = useRoutingsStore();
-  const { materials } = useMaterialsStore();
   const { user: currentUser } = useAuth();
   const { roles } = useRolesStore();
   
@@ -89,8 +86,6 @@ export default function WorkOrderPage() {
   }, [workOrders, productionPlans, updateProductionPlan]);
 
   // Get active options
-  const activeProducts = products.filter((p: Product) => p.status === "active");
-  const activeLines = lines.filter((l: Line) => l.status === "active");
   const activePlans = productionPlans.filter((p: ProductionPlan) => p.status === "계획" || p.status === "진행중");
 
   // Permission check
