@@ -98,11 +98,11 @@ export async function POST(request: NextRequest) {
       success: true,
       message: '자재가 추가되었습니다',
     }, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('자재 추가 에러:', error);
     
     // UNIQUE KEY 제약 조건 위반 (자재 코드 중복)
-    if (error?.number === 2627) {
+    if ((error as { number?: number })?.number === 2627) {
       return NextResponse.json({
         success: false,
         message: '이미 존재하는 자재 코드입니다. 다른 코드를 사용해주세요.',
@@ -173,11 +173,11 @@ export async function PUT(request: NextRequest) {
       success: true,
       message: '자재 정보가 수정되었습니다',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('자재 수정 에러:', error);
     
     // UNIQUE KEY 제약 조건 위반 (자재 코드 중복)
-    if (error?.number === 2627) {
+    if ((error as { number?: number })?.number === 2627) {
       return NextResponse.json({
         success: false,
         message: '이미 존재하는 자재 코드입니다. 다른 코드를 사용해주세요.',

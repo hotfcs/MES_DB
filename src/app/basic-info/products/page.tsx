@@ -28,7 +28,7 @@ export default function ProductsPage() {
   const [editValidationErrors, setEditValidationErrors] = useState<{code?: string; name?: string; category?: string}>({});
   
   // 실시간 검증 함수
-  const validateNewProduct = (field: string, value: any) => {
+  const validateNewProduct = (field: string, value: unknown) => {
     const errors = { ...validationErrors };
     if (field === 'code') {
       if (!value?.trim()) errors.code = '제품 코드는 필수입니다.';
@@ -46,7 +46,7 @@ export default function ProductsPage() {
     setValidationErrors(errors);
   };
   
-  const validateEditProduct = (field: string, value: any, currentId: number) => {
+  const validateEditProduct = (field: string, value: unknown, currentId: number) => {
     const errors = { ...editValidationErrors };
     if (field === 'code') {
       if (!value?.trim()) errors.code = '제품 코드는 필수입니다.';
@@ -190,9 +190,9 @@ export default function ProductsPage() {
     });
       setNotification({ type: 'success', message: '제품이 추가되었습니다.' });
       setTimeout(() => setNotification(null), 3000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('제품 추가 오류:', error);
-      setNotification({ type: 'error', message: error.message || '제품 추가에 실패했습니다.' });
+      setNotification({ type: 'error', message: (error as Error).message || '제품 추가에 실패했습니다.' });
     }
   };
 
@@ -252,9 +252,9 @@ export default function ProductsPage() {
       }
       setNotification({ type: 'success', message: '제품 정보가 수정되었습니다.' });
       setTimeout(() => setNotification(null), 3000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('제품 수정 오류:', error);
-      setNotification({ type: 'error', message: error.message || '제품 수정에 실패했습니다.' });
+      setNotification({ type: 'error', message: (error as Error).message || '제품 수정에 실패했습니다.' });
     }
   };
 

@@ -27,7 +27,7 @@ export default function UsersPage() {
   }>({});
   
   // 실시간 검증 함수
-  const validateNewUser = (field: string, value: any) => {
+  const validateNewUser = (field: string, value: unknown) => {
     const errors = { ...validationErrors };
     if (field === 'account') {
       if (!value?.trim()) errors.account = '사용자 계정은 필수입니다.';
@@ -53,7 +53,7 @@ export default function UsersPage() {
     setValidationErrors(errors);
   };
   
-  const validateEditUser = (field: string, value: any, currentId: number) => {
+  const validateEditUser = (field: string, value: unknown, currentId: number) => {
     const errors = { ...editValidationErrors };
     if (field === 'account') {
       if (!value?.trim()) errors.account = '사용자 계정은 필수입니다.';
@@ -217,9 +217,9 @@ export default function UsersPage() {
       setValidationErrors({});
       setNotification({ type: 'success', message: '사용자가 추가되었습니다.' });
       setTimeout(() => setNotification(null), 3000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('사용자 추가 오류:', error);
-      setNotification({ type: 'error', message: error.message || '사용자 추가에 실패했습니다.' });
+      setNotification({ type: 'error', message: (error as Error).message || '사용자 추가에 실패했습니다.' });
     }
   };
 
@@ -285,9 +285,9 @@ export default function UsersPage() {
         setSelectedUser(updatedUser);
         setNotification({ type: 'success', message: '사용자 정보가 수정되었습니다.' });
         setTimeout(() => setNotification(null), 3000);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('사용자 수정 오류:', error);
-        setNotification({ type: 'error', message: error.message || '사용자 수정에 실패했습니다.' });
+        setNotification({ type: 'error', message: (error as Error).message || '사용자 수정에 실패했습니다.' });
     }
   };
 

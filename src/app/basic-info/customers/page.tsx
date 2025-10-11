@@ -78,7 +78,7 @@ export default function CustomersPage() {
   };
 
   // 실시간 검증 함수
-  const validateNewCustomer = (field: string, value: any) => {
+  const validateNewCustomer = (field: string, value: unknown) => {
     const errors: typeof validationErrors = { ...validationErrors };
     
     if (field === 'code') {
@@ -110,7 +110,7 @@ export default function CustomersPage() {
     setValidationErrors(errors);
   };
   
-  const validateEditCustomer = (field: string, value: any, currentId: number) => {
+  const validateEditCustomer = (field: string, value: unknown, currentId: number) => {
     const errors: typeof editValidationErrors = { ...editValidationErrors };
     
     if (field === 'code') {
@@ -203,8 +203,8 @@ export default function CustomersPage() {
       });
       setNotification({ type: 'success', message: '거래처가 추가되었습니다.' });
       setTimeout(() => setNotification(null), 3000);
-    } catch (error: any) {
-      setNotification({ type: 'error', message: error.message || '거래처 추가에 실패했습니다.' });
+    } catch (error: unknown) {
+      setNotification({ type: 'error', message: (error as Error).message || '거래처 추가에 실패했습니다.' });
     }
   };
 
@@ -241,8 +241,8 @@ export default function CustomersPage() {
       }
       setNotification({ type: 'success', message: '거래처 정보가 수정되었습니다.' });
       setTimeout(() => setNotification(null), 3000);
-    } catch (error: any) {
-      setNotification({ type: 'error', message: error.message || '거래처 수정에 실패했습니다.' });
+    } catch (error: unknown) {
+      setNotification({ type: 'error', message: (error as Error).message || '거래처 수정에 실패했습니다.' });
     }
   };
 

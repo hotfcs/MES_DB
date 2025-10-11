@@ -29,7 +29,7 @@ export default function MaterialsPage() {
   const [editValidationErrors, setEditValidationErrors] = useState<{code?: string; name?: string; category?: string}>({});
   
   // 실시간 검증 함수
-  const validateNewMaterial = (field: string, value: any) => {
+  const validateNewMaterial = (field: string, value: unknown) => {
     const errors = { ...validationErrors };
     if (field === 'code') {
       if (!value?.trim()) errors.code = '자재 코드는 필수입니다.';
@@ -47,7 +47,7 @@ export default function MaterialsPage() {
     setValidationErrors(errors);
   };
   
-  const validateEditMaterial = (field: string, value: any, currentId: number) => {
+  const validateEditMaterial = (field: string, value: unknown, currentId: number) => {
     const errors = { ...editValidationErrors };
     if (field === 'code') {
       if (!value?.trim()) errors.code = '자재 코드는 필수입니다.';
@@ -159,8 +159,8 @@ export default function MaterialsPage() {
       });
       setNotification({ type: 'success', message: '자재가 추가되었습니다.' });
       setTimeout(() => setNotification(null), 3000);
-    } catch (error: any) {
-      setNotification({ type: 'error', message: error.message || '자재 추가에 실패했습니다.' });
+    } catch (error: unknown) {
+      setNotification({ type: 'error', message: (error as Error).message || '자재 추가에 실패했습니다.' });
     }
   };
 
@@ -197,8 +197,8 @@ export default function MaterialsPage() {
       }
       setNotification({ type: 'success', message: '자재 정보가 수정되었습니다.' });
       setTimeout(() => setNotification(null), 3000);
-    } catch (error: any) {
-      setNotification({ type: 'error', message: error.message || '자재 수정에 실패했습니다.' });
+    } catch (error: unknown) {
+      setNotification({ type: 'error', message: (error as Error).message || '자재 수정에 실패했습니다.' });
     }
   };
 
