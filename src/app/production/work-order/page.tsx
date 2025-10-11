@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useWorkOrdersStore, type WorkOrder, useProductionPlansStore, type ProductionPlan, useProductsStore, type Product, useLinesStore, type Line, useBOMsStore, useRoutingsStore, useMaterialsStore } from "@/store/dataStore-optimized";
+import { useWorkOrdersStore, type WorkOrder, useProductionPlansStore, type ProductionPlan, useProductsStore, type Product } from "@/store/dataStore-optimized";
 import { useAuth } from "@/store/authStore";
 import { useRolesStore } from "@/store/dataStore-optimized";
 import * as XLSX from "xlsx";
@@ -30,10 +30,9 @@ const checkAndUpdatePlanStatus = (
 };
 
 export default function WorkOrderPage() {
-  const { workOrders, workOrderRoutingSteps, workOrderMaterials, getWorkOrderRoutingSteps, getWorkOrderMaterials, addWorkOrder, updateWorkOrder, deleteWorkOrder } = useWorkOrdersStore();
+  const { workOrders, getWorkOrderRoutingSteps, getWorkOrderMaterials, addWorkOrder, updateWorkOrder, deleteWorkOrder } = useWorkOrdersStore();
   const { productionPlans, updateProductionPlan } = useProductionPlansStore();
   const { products } = useProductsStore();
-  const { lines } = useLinesStore();
   const { user: currentUser } = useAuth();
   const { roles } = useRolesStore();
   
@@ -153,9 +152,6 @@ export default function WorkOrderPage() {
   // Get routing steps and materials for selected work order (from snapshot)
   const selectedRoutingSteps = selectedOrder ? getWorkOrderRoutingSteps(selectedOrder.id) : [];
   const selectedBOMItems = selectedOrder ? getWorkOrderMaterials(selectedOrder.id) : [];
-  
-  // Check if snapshot data exists (for backward compatibility with old work orders)
-  const hasSnapshotData = selectedOrder && (selectedRoutingSteps.length > 0 || selectedBOMItems.length > 0);
 
   const handlePlanSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const planCode = e.target.value;
