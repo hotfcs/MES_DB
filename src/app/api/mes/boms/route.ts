@@ -99,19 +99,20 @@ export async function POST(request: NextRequest) {
       
       // Insert routing steps snapshot for this BOM
       for (const step of routingSteps) {
+        const stepData = step as Record<string, unknown>;
         await executeNonQuery(
           `INSERT INTO bom_routing_steps 
            (bom_id, sequence, line, process, main_equipment, standard_man_hours, previous_process, next_process, created_at) 
            VALUES (@bomId, @sequence, @line, @process, @mainEquipment, @standardManHours, @previousProcess, @nextProcess, GETDATE())`,
           {
             bomId: newBomId,
-            sequence: step.sequence,
-            line: step.line,
-            process: step.process,
-            mainEquipment: step.mainEquipment,
-            standardManHours: step.standardManHours,
-            previousProcess: step.previousProcess,
-            nextProcess: step.nextProcess
+            sequence: stepData.sequence as number,
+            line: stepData.line as string,
+            process: stepData.process as string,
+            mainEquipment: stepData.mainEquipment as string,
+            standardManHours: stepData.standardManHours as number,
+            previousProcess: stepData.previousProcess as string | null,
+            nextProcess: stepData.nextProcess as string | null
           }
         );
       }
