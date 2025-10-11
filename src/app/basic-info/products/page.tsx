@@ -31,13 +31,14 @@ export default function ProductsPage() {
   // 실시간 검증 함수
   const validateNewProduct = (field: string, value: unknown) => {
     const errors = { ...validationErrors };
+    const stringValue = value as string;
     if (field === 'code') {
-      if (!value?.trim()) errors.code = '제품 코드는 필수입니다.';
-      else if (products.some(p => p.code === value)) errors.code = '이미 존재하는 코드입니다.';
+      if (!stringValue?.trim()) errors.code = '제품 코드는 필수입니다.';
+      else if (products.some((p: Product) => p.code === stringValue)) errors.code = '이미 존재하는 코드입니다.';
       else delete errors.code;
     }
     if (field === 'name') {
-      if (!value?.trim()) errors.name = '제품명은 필수입니다.';
+      if (!stringValue?.trim()) errors.name = '제품명은 필수입니다.';
       else delete errors.name;
     }
     if (field === 'category') {
@@ -49,13 +50,14 @@ export default function ProductsPage() {
   
   const validateEditProduct = (field: string, value: unknown, currentId: number) => {
     const errors = { ...editValidationErrors };
+    const stringValue = value as string;
     if (field === 'code') {
-      if (!value?.trim()) errors.code = '제품 코드는 필수입니다.';
-      else if (products.some(p => p.code === value && p.id !== currentId)) errors.code = '이미 존재하는 코드입니다.';
+      if (!stringValue?.trim()) errors.code = '제품 코드는 필수입니다.';
+      else if (products.some((p: Product) => p.code === stringValue && p.id !== currentId)) errors.code = '이미 존재하는 코드입니다.';
       else delete errors.code;
     }
     if (field === 'name') {
-      if (!value?.trim()) errors.name = '제품명은 필수입니다.';
+      if (!stringValue?.trim()) errors.name = '제품명은 필수입니다.';
       else delete errors.name;
     }
     if (field === 'category') {
@@ -145,7 +147,7 @@ export default function ProductsPage() {
     }
     
     // 코드 중복 검증
-    if (products.some(p => p.code === newProduct.code)) {
+    if (products.some((p: Product) => p.code === newProduct.code)) {
       setNotification({ type: 'error', message: '이미 존재하는 제품 코드입니다. 다른 코드를 사용해주세요.' });
       return;
     }
@@ -215,7 +217,7 @@ export default function ProductsPage() {
     }
     
     // 코드 중복 검증 (자신 제외)
-    if (products.some(p => p.code === editingProduct.code && p.id !== editingProduct.id)) {
+    if (products.some((p: Product) => p.code === editingProduct.code && p.id !== editingProduct.id)) {
       setNotification({ type: 'error', message: '이미 존재하는 제품 코드입니다. 다른 코드를 사용해주세요.' });
       return;
     }

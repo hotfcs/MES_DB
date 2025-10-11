@@ -96,7 +96,7 @@ export default function UsersPage() {
     }
     
     // 계정 중복 검증
-    if (users.some(u => u.account === newUser.account)) {
+    if (users.some((u: User) => u.account === newUser.account)) {
       setNotification({ type: 'error', message: '이미 존재하는 사용자 계정입니다. 다른 계정명을 사용해주세요.' });
       return;
     }
@@ -154,7 +154,6 @@ export default function UsersPage() {
         resignDate: ""
       });
       setShowAddModal(false);
-      setValidationErrors({});
       setNotification({ type: 'success', message: '사용자가 추가되었습니다.' });
       setTimeout(() => setNotification(null), 3000);
     } catch (error: unknown) {
@@ -189,7 +188,7 @@ export default function UsersPage() {
     }
     
     // 계정 중복 검증 (자신 제외)
-    if (users.some(u => u.account === editingUser.account && u.id !== editingUser.id)) {
+    if (users.some((u: User) => u.account === editingUser.account && u.id !== editingUser.id)) {
       setNotification({ type: 'error', message: '이미 존재하는 사용자 계정입니다. 다른 계정명을 사용해주세요.' });
       return;
     }
@@ -221,7 +220,6 @@ export default function UsersPage() {
         updateUser(updatedUser.id, updatedUser);
       setEditingUser(null);
       setShowEditModal(false);
-        setEditValidationErrors({});
         setSelectedUser(updatedUser);
         setNotification({ type: 'success', message: '사용자 정보가 수정되었습니다.' });
         setTimeout(() => setNotification(null), 3000);
@@ -290,7 +288,6 @@ export default function UsersPage() {
                 onClick={() => {
                   if (selectedUser) {
                     setEditingUser(selectedUser);
-                    setEditValidationErrors({});
                     setShowEditModal(true);
                   }
                 }}
@@ -675,7 +672,6 @@ export default function UsersPage() {
                 <button
                   onClick={() => {
                     setShowAddModal(false);
-                    setValidationErrors({});
                   }}
                   className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition-colors"
                 >
@@ -857,7 +853,6 @@ export default function UsersPage() {
                   onClick={() => {
                     setShowEditModal(false);
                     setEditingUser(null);
-                    setEditValidationErrors({});
                   }}
                   className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 transition-colors"
                 >

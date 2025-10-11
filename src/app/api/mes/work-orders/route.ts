@@ -1,6 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { executeQuery, executeNonQuery } from '@/lib/db-queries';
 
+interface RoutingStep {
+  sequence: number;
+  line: string;
+  process: string;
+  mainEquipment: string;
+  standardManHours: number;
+  previousProcess: string | null;
+  nextProcess: string | null;
+}
+
+interface BOMItem {
+  processSequence: number;
+  processName: string;
+  materialCode: string;
+  materialName: string;
+  quantity: number;
+  unit: string;
+  lossRate: number;
+  alternateMaterial: string;
+}
+
 // GET: 작업지시 목록 조회
 export async function GET(request: NextRequest) {
   try {
@@ -165,7 +186,7 @@ export async function POST(request: NextRequest) {
       note: note || ''
     });
 
-    const workOrderId = result[0]?.id;
+    const workOrderId = result[0]?.id as number;
 
     if (!workOrderId) {
       throw new Error('작업지시 ID를 가져올 수 없습니다.');
@@ -182,7 +203,7 @@ export async function POST(request: NextRequest) {
     `, { productCode });
 
     if (latestBOM && latestBOM.length > 0) {
-      const bomId = latestBOM[0].id;
+      const bomId = latestBOM[0].id as number;
       console.log(`📋 제품 ${productCode}의 최종 BOM: ${latestBOM[0].revision} (ID: ${bomId})`);
 
       // Step 3: Copy BOM routing steps to work order routing steps
@@ -197,7 +218,8 @@ export async function POST(request: NextRequest) {
         ORDER BY sequence
       `, { bomId });
 
-      for (const step of bomRoutingSteps) {
+      const stepList = bomRoutingSteps as unknown as RoutingStep[];
+      for (const step of stepList) {
         await executeNonQuery(`
           INSERT INTO work_order_routing_steps 
           (work_order_id, sequence, line, process, main_equipment, standard_man_hours, previous_process, next_process, created_at)
@@ -214,7 +236,7 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      console.log(`✅ 라우팅 단계 ${bomRoutingSteps.length}개 스냅샷 저장됨`);
+      console.log(`✅ 라우팅 단계 ${stepList.length}개 스냅샷 저장됨`);
 
       // Step 4: Copy BOM items (materials) to work order materials
       const bomItems = await executeQuery(`
@@ -232,7 +254,8 @@ export async function POST(request: NextRequest) {
         ORDER BY process_sequence
       `, { bomId });
 
-      for (const item of bomItems) {
+      const itemList = bomItems as unknown as BOMItem[];
+      for (const item of itemList) {
         await executeNonQuery(`
           INSERT INTO work_order_materials 
           (work_order_id, process_sequence, process_name, material_code, material_name, quantity, unit, loss_rate, alternate_material, created_at)
@@ -250,7 +273,7 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      console.log(`✅ 자재 정보 ${bomItems.length}개 스냅샷 저장됨`);
+      console.log(`✅ 자재 정보 ${itemList.length}개 스냅샷 저장됨`);
       console.log(`🎉 작업지시 ${workOrderId} 생성 완료 (BOM: ${latestBOM[0].revision})`);
     } else {
       console.log(`⚠️ 제품 ${productCode}의 BOM이 없습니다. 작업지시만 생성됨.`);

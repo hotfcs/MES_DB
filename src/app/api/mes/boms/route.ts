@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       );
       
       // Insert routing steps snapshot for this BOM
-      const stepList = routingSteps as RoutingStep[];
+      const stepList = routingSteps as unknown as RoutingStep[];
       for (const step of stepList) {
         await executeNonQuery(
           `INSERT INTO bom_routing_steps 

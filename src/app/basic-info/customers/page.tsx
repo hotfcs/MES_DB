@@ -80,11 +80,12 @@ export default function CustomersPage() {
   // 실시간 검증 함수
   const validateNewCustomer = (field: string, value: unknown) => {
     const errors: typeof validationErrors = { ...validationErrors };
+    const stringValue = value as string;
     
     if (field === 'code') {
-      if (!value || value.trim() === '') {
+      if (!stringValue || stringValue.trim() === '') {
         errors.code = '거래처 코드는 필수입니다.';
-      } else if (customers.some(c => c.code === value)) {
+      } else if (customers.some((c: Customer) => c.code === stringValue)) {
         errors.code = '이미 존재하는 코드입니다.';
       } else {
         delete errors.code;
@@ -92,7 +93,7 @@ export default function CustomersPage() {
     }
     
     if (field === 'name') {
-      if (!value || value.trim() === '') {
+      if (!stringValue || stringValue.trim() === '') {
         errors.name = '거래처명은 필수입니다.';
       } else {
         delete errors.name;
@@ -112,11 +113,12 @@ export default function CustomersPage() {
   
   const validateEditCustomer = (field: string, value: unknown, currentId: number) => {
     const errors: typeof editValidationErrors = { ...editValidationErrors };
+    const stringValue = value as string;
     
     if (field === 'code') {
-      if (!value || value.trim() === '') {
+      if (!stringValue || stringValue.trim() === '') {
         errors.code = '거래처 코드는 필수입니다.';
-      } else if (customers.some(c => c.code === value && c.id !== currentId)) {
+      } else if (customers.some((c: Customer) => c.code === stringValue && c.id !== currentId)) {
         errors.code = '이미 존재하는 코드입니다.';
       } else {
         delete errors.code;
@@ -124,7 +126,7 @@ export default function CustomersPage() {
     }
     
     if (field === 'name') {
-      if (!value || value.trim() === '') {
+      if (!stringValue || stringValue.trim() === '') {
         errors.name = '거래처명은 필수입니다.';
       } else {
         delete errors.name;
@@ -179,7 +181,7 @@ export default function CustomersPage() {
     }
     
     // 코드 중복 검증
-    if (customers.some(c => c.code === newCustomer.code)) {
+    if (customers.some((c: Customer) => c.code === newCustomer.code)) {
       setNotification({ type: 'error', message: '이미 존재하는 거래처 코드입니다. 다른 코드를 사용해주세요.' });
       return;
     }
@@ -226,7 +228,7 @@ export default function CustomersPage() {
     }
     
     // 코드 중복 검증 (자신 제외)
-    if (customers.some(c => c.code === editingCustomer.code && c.id !== editingCustomer.id)) {
+    if (customers.some((c: Customer) => c.code === editingCustomer.code && c.id !== editingCustomer.id)) {
       setNotification({ type: 'error', message: '이미 존재하는 거래처 코드입니다. 다른 코드를 사용해주세요.' });
       return;
     }

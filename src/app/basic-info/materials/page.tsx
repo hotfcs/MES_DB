@@ -31,13 +31,14 @@ export default function MaterialsPage() {
   // 실시간 검증 함수
   const validateNewMaterial = (field: string, value: unknown) => {
     const errors = { ...validationErrors };
+    const stringValue = value as string;
     if (field === 'code') {
-      if (!value?.trim()) errors.code = '자재 코드는 필수입니다.';
-      else if (materials.some(m => m.code === value)) errors.code = '이미 존재하는 코드입니다.';
+      if (!stringValue?.trim()) errors.code = '자재 코드는 필수입니다.';
+      else if (materials.some((m: Material) => m.code === stringValue)) errors.code = '이미 존재하는 코드입니다.';
       else delete errors.code;
     }
     if (field === 'name') {
-      if (!value?.trim()) errors.name = '자재명은 필수입니다.';
+      if (!stringValue?.trim()) errors.name = '자재명은 필수입니다.';
       else delete errors.name;
     }
     if (field === 'category') {
@@ -49,13 +50,14 @@ export default function MaterialsPage() {
   
   const validateEditMaterial = (field: string, value: unknown, currentId: number) => {
     const errors = { ...editValidationErrors };
+    const stringValue = value as string;
     if (field === 'code') {
-      if (!value?.trim()) errors.code = '자재 코드는 필수입니다.';
-      else if (materials.some(m => m.code === value && m.id !== currentId)) errors.code = '이미 존재하는 코드입니다.';
+      if (!stringValue?.trim()) errors.code = '자재 코드는 필수입니다.';
+      else if (materials.some((m: Material) => m.code === stringValue && m.id !== currentId)) errors.code = '이미 존재하는 코드입니다.';
       else delete errors.code;
     }
     if (field === 'name') {
-      if (!value?.trim()) errors.name = '자재명은 필수입니다.';
+      if (!stringValue?.trim()) errors.name = '자재명은 필수입니다.';
       else delete errors.name;
     }
     if (field === 'category') {
@@ -136,7 +138,7 @@ export default function MaterialsPage() {
     }
     
     // 코드 중복 검증
-    if (materials.some(m => m.code === newMaterial.code)) {
+    if (materials.some((m: Material) => m.code === newMaterial.code)) {
       setNotification({ type: 'error', message: '이미 존재하는 자재 코드입니다. 다른 코드를 사용해주세요.' });
       return;
     }
@@ -182,7 +184,7 @@ export default function MaterialsPage() {
     }
     
     // 코드 중복 검증 (자신 제외)
-    if (materials.some(m => m.code === editingMaterial.code && m.id !== editingMaterial.id)) {
+    if (materials.some((m: Material) => m.code === editingMaterial.code && m.id !== editingMaterial.id)) {
       setNotification({ type: 'error', message: '이미 존재하는 자재 코드입니다. 다른 코드를 사용해주세요.' });
       return;
     }
