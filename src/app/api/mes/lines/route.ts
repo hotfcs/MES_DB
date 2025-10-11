@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { executeQuery, executeNonQuery } from '@/lib/db-queries';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const query = `
       SELECT 
