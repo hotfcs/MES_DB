@@ -1,6 +1,7 @@
 ---
 marp: true
 theme: default
+size: A4
 paginate: true
 header: 'MES 시스템 기술 아키텍처'
 footer: 'MES Development Team | 2025-10-11'
@@ -10,12 +11,20 @@ style: |
   }
   h1 {
     color: #2563eb;
+    font-size: 1.8em;
   }
   h2 {
     color: #1e40af;
+    font-size: 1.4em;
+  }
+  h3 {
+    font-size: 1.2em;
   }
   code {
     background: #f3f4f6;
+  }
+  table {
+    font-size: 0.9em;
   }
 ---
 
