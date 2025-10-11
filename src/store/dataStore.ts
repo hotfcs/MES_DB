@@ -933,6 +933,7 @@ export function useRoutingsStore() {
     return routingSteps.filter(step => step.routingId === routingId);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const saveRoutingSteps = async (routingId: number, steps: RoutingStep[]) => {
     await fetchAPI('/api/mes/routings', {
       method: 'PUT',
@@ -991,6 +992,7 @@ export function useBOMsStore() {
     return bomRoutingSteps.filter(step => step.bomId === bomId);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const saveBOMItems = async (bomId: number, items: BOMItem[]) => {
     await fetchAPI('/api/mes/boms', {
       method: 'PUT',
