@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import * as XLSX from 'xlsx';
 import { useUsersStore, useDepartmentsStore, useRolesStore, User } from "@/store/dataStore-optimized";
 import { useAuth } from "@/store/authStore";
@@ -18,73 +19,12 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
   
-  // 실시간 검증 에러 상태
-  const [validationErrors, setValidationErrors] = useState<{
-    account?: string; password?: string; name?: string; role?: string; department?: string;
-  }>({});
-  const [editValidationErrors, setEditValidationErrors] = useState<{
-    account?: string; password?: string; name?: string; role?: string; department?: string;
-  }>({});
-  
-  // 실시간 검증 함수
-  const validateNewUser = (field: string, value: unknown) => {
-    const errors = { ...validationErrors };
-    if (field === 'account') {
-      if (!value?.trim()) errors.account = '사용자 계정은 필수입니다.';
-      else if (users.some(u => u.account === value)) errors.account = '이미 존재하는 계정입니다.';
-      else delete errors.account;
-    }
-    if (field === 'password') {
-      if (!value?.trim()) errors.password = '비밀번호는 필수입니다.';
-      else delete errors.password;
-    }
-    if (field === 'name') {
-      if (!value?.trim()) errors.name = '사용자명은 필수입니다.';
-      else delete errors.name;
-    }
-    if (field === 'role') {
-      if (!value) errors.role = '사용자권한은 필수입니다.';
-      else delete errors.role;
-    }
-    if (field === 'department') {
-      if (!value?.trim()) errors.department = '부서는 필수입니다.';
-      else delete errors.department;
-    }
-    setValidationErrors(errors);
-  };
-  
-  const validateEditUser = (field: string, value: unknown, currentId: number) => {
-    const errors = { ...editValidationErrors };
-    if (field === 'account') {
-      if (!value?.trim()) errors.account = '사용자 계정은 필수입니다.';
-      else if (users.some(u => u.account === value && u.id !== currentId)) errors.account = '이미 존재하는 계정입니다.';
-      else delete errors.account;
-    }
-    if (field === 'password') {
-      if (!value?.trim()) errors.password = '비밀번호는 필수입니다.';
-      else delete errors.password;
-    }
-    if (field === 'name') {
-      if (!value?.trim()) errors.name = '사용자명은 필수입니다.';
-      else delete errors.name;
-    }
-    if (field === 'role') {
-      if (!value) errors.role = '사용자권한은 필수입니다.';
-      else delete errors.role;
-    }
-    if (field === 'department') {
-      if (!value?.trim()) errors.department = '부서는 필수입니다.';
-      else delete errors.department;
-    }
-    setEditValidationErrors(errors);
-  };
-  
   const isNewUserValid = () => {
-    return newUser.account && newUser.password && newUser.name && newUser.role && newUser.department && Object.keys(validationErrors).length === 0;
+    return newUser.account && newUser.password && newUser.name && newUser.role && newUser.department;
   };
   
   const isEditUserValid = () => {
-    return editingUser?.account && editingUser?.password && editingUser?.name && editingUser?.role && editingUser?.department && Object.keys(editValidationErrors).length === 0;
+    return editingUser?.account && editingUser?.password && editingUser?.name && editingUser?.role && editingUser?.department;
   };
   
   const [newUser, setNewUser] = useState({
@@ -468,13 +408,14 @@ export default function UsersPage() {
               
               {/* 사용자 이미지 */}
               <div className="flex justify-center mb-4">
-                <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center text-xl font-bold text-gray-600 relative">
+                <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center text-xl font-bold text-gray-600 relative overflow-hidden">
                   {selectedUser.image ? (
-                    <img 
+                    <Image 
                       key={selectedUser.id}
                       src={selectedUser.image} 
                       alt={selectedUser.name}
-                      className="w-full h-full rounded-full object-cover"
+                      fill
+                      className="object-cover"
                     />
                   ) : (
                     <span 
@@ -684,11 +625,12 @@ export default function UsersPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">사진</label>
                 {newUser.image && (
                   <div className="mb-3">
-                    <div className="relative inline-block">
-                      <img
+                    <div className="relative inline-block w-32 h-32">
+                      <Image
                         src={newUser.image}
                         alt="사용자 사진"
-                        className="w-32 h-32 rounded-lg object-cover border-2 border-gray-300 bg-gray-100"
+                        fill
+                        className="rounded-lg object-cover border-2 border-gray-300 bg-gray-100"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128"><rect width="128" height="128" fill="%23e5e7eb"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="12">이미지 로드 실패</text></svg>';
@@ -864,11 +806,12 @@ export default function UsersPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">사진</label>
                 {editingUser.image && (
                   <div className="mb-3">
-                    <div className="relative inline-block">
-                      <img
+                    <div className="relative inline-block w-32 h-32">
+                      <Image
                         src={editingUser.image}
                         alt="사용자 사진"
-                        className="w-32 h-32 rounded-lg object-cover border-2 border-gray-300 bg-gray-100"
+                        fill
+                        className="rounded-lg object-cover border-2 border-gray-300 bg-gray-100"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128"><rect width="128" height="128" fill="%23e5e7eb"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="12">이미지 로드 실패</text></svg>';
