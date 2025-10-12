@@ -91,16 +91,17 @@ export default function BOMPage() {
   useEffect(() => {
     if (selectedBOM) {
       const items = getBOMItemsByBOMId(selectedBOM.id);
-      const itemsCopy = items.map(i => ({...i}));
+      const itemsCopy = items.map((i: BOMItem) => ({...i}));
       setEditingItems(itemsCopy);
-      setOriginalItems(items.map(i => ({...i}))); // 원본 데이터 백업
+      setOriginalItems(items.map((i: BOMItem) => ({...i}))); // 원본 데이터 백업
       setSelectedProcessSequence(null); // Reset selected process
     } else {
       setEditingItems([]);
       setOriginalItems([]);
       setSelectedProcessSequence(null);
     }
-  }, [selectedBOM, bomItems, getBOMItemsByBOMId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBOM?.id]);
 
   // Get routing info for selected BOM (from snapshot)
   const getRoutingInfo = () => {
