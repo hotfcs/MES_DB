@@ -23,6 +23,9 @@
 # misc
 .DS_Store
 *.pem
+public/favicon.ico
+src/app/favicon.ico
+**/favicon.ico
 
 # debug
 npm-debug.log*

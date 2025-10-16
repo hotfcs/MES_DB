@@ -14,8 +14,12 @@
     "@tanstack/react-query-devtools": "^5.90.2",
     "mssql": "^12.0.0",
     "next": "15.5.4",
+    "openai": "^6.3.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-markdown": "^10.1.0",
+    "recharts": "^3.2.1",
+    "remark-gfm": "^4.0.1",
     "tedious": "^19.0.0",
     "xlsx": "^0.18.5"
   },

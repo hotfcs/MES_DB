@@ -236,3 +236,80 @@ export interface FilterCondition {
 // SQL 파라미터
 export type SqlParams = Record<string, string | number | boolean | Date | null>;
 
+// ====================================
+// 챗봇 타입
+// ====================================
+
+// 챗봇 세션
+export interface ChatSession {
+  id: number;
+  user_id: number;
+  session_name: string | null;
+  created_at: Date;
+  updated_at: Date;
+  is_active: boolean;
+}
+
+// 챗봇 메시지 역할
+export type ChatRole = 'user' | 'assistant' | 'system';
+
+// 챗봇 메시지
+export interface ChatMessage {
+  id: number;
+  session_id: number;
+  user_id: number;
+  role: ChatRole;
+  content: string;
+  function_name?: string | null;
+  function_arguments?: string | null;
+  function_result?: string | null;
+  created_at: Date;
+}
+
+// 챗봇 메시지 생성 DTO
+export interface CreateChatMessageDto {
+  session_id: number;
+  user_id: number;
+  role: ChatRole;
+  content: string;
+  function_name?: string;
+  function_arguments?: string;
+  function_result?: string;
+}
+
+// 챗봇 피드백
+export interface ChatFeedback {
+  id: number;
+  chat_id: number;
+  user_id: number;
+  rating: number;
+  feedback_text: string | null;
+  created_at: Date;
+}
+
+// OpenAI 함수 호출 정의
+export interface OpenAIFunction {
+  name: string;
+  description: string;
+  parameters: {
+    type: string;
+    properties: Record<string, unknown>;
+    required: string[];
+  };
+}
+
+// 챗봇 API 요청
+export interface ChatRequest {
+  message: string;
+  session_id?: number;
+}
+
+// 챗봇 API 응답
+export interface ChatResponse {
+  success: boolean;
+  message?: string;
+  session_id?: number;
+  response?: string;
+  error?: string;
+}
+

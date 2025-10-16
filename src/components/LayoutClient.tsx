@@ -6,6 +6,8 @@ import Topbar from "@/components/Topbar";
 import { useAuth } from "@/store/authStore";
 import { useRouter, usePathname } from "next/navigation";
 import TabBar from "@/components/TabBar";
+import ChatBot from "@/components/ChatBot";
+import ChatBotButton from "@/components/ChatBotButton";
 
 interface LayoutClientProps {
   children: React.ReactNode;
@@ -14,6 +16,7 @@ interface LayoutClientProps {
 export default function LayoutClient({ children }: LayoutClientProps) {
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [isClient, setIsClient] = useState(false);
+  const [chatBotOpen, setChatBotOpen] = useState(false);
   const { user, updateActivity } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -83,6 +86,19 @@ export default function LayoutClient({ children }: LayoutClientProps) {
         {!isLoginPage && <TabBar />}
         <main className="p-4">{children}</main>
       </div>
+
+      {/* 챗봇 (로그인된 사용자에게만 표시) - 임시 비활성화 */}
+      {/* OpenAI API 키를 설정하고 create-chatbot-tables.sql을 실행한 후 주석을 해제하세요 */}
+      {user && !isLoginPage && (
+        <>
+          <ChatBotButton onClick={() => setChatBotOpen(!chatBotOpen)} />
+          <ChatBot
+            userId={user.id}
+            isOpen={chatBotOpen}
+            onClose={() => setChatBotOpen(false)}
+          />
+        </>
+      )} 
     </div>
   );
 }
