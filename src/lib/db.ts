@@ -19,7 +19,6 @@ const config: sql.config = {
     max: 10, // Vercel 서버리스 환경: 최대 연결 수 감소 (50 -> 10)
     min: 0, // Vercel 서버리스 환경: 최소 연결 0 (Cold Start 방지)
     idleTimeoutMillis: 30000, // Vercel 서버리스 환경: 유휴 타임아웃 단축 (60s -> 30s)
-    evictionRunIntervalMillis: 30000, // 유휴 연결 정리 간격
   },
 };
 
