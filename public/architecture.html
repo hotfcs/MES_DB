@@ -3,33 +3,316 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>프로젝트 기술 아키텍처</title>
+  <title>MES 시스템 기술 아키텍처</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial; max-width: 980px; margin: 40px auto; line-height: 1.6; padding: 0 20px; color: #111; }
-    pre { background:#f6f8fa; padding:12px; overflow:auto; border-radius:6px; }
-    code { font-family: "Source Code Pro", monospace; font-size: 0.95em; }
-    h1, h2, h3, h4 { color: #0b5fff; }
-    table { border-collapse: collapse; }
-    table, th, td { border: 1px solid #ddd; padding: 6px 10px; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      max-width: 1200px;
+      margin: 40px auto;
+      line-height: 1.7;
+      padding: 0 30px;
+      color: #1a1a1a;
+      background: #fafafa;
+    }
+    .container {
+      background: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    pre { 
+      background: #f6f8fa;
+      padding: 16px;
+      overflow: auto;
+      border-radius: 6px;
+      border: 1px solid #e1e4e8;
+      font-size: 0.9em;
+    }
+    code { 
+      font-family: "Consolas", "Monaco", "Courier New", monospace;
+      font-size: 0.9em;
+      background: #f6f8fa;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    pre code {
+      background: transparent;
+      padding: 0;
+    }
+    h1 { 
+      color: #0066cc;
+      border-bottom: 3px solid #0066cc;
+      padding-bottom: 10px;
+      margin-bottom: 30px;
+    }
+    h2 { 
+      color: #0066cc;
+      border-bottom: 2px solid #e1e4e8;
+      padding-bottom: 8px;
+      margin-top: 40px;
+    }
+    h3 { 
+      color: #0088ff;
+      margin-top: 24px;
+    }
+    h4 { 
+      color: #00aaff;
+    }
+    table { 
+      border-collapse: collapse;
+      width: 100%;
+      margin: 16px 0;
+    }
+    table, th, td { 
+      border: 1px solid #ddd;
+    }
+    th {
+      background: #f6f8fa;
+      font-weight: 600;
+      padding: 10px 12px;
+      text-align: left;
+    }
+    td {
+      padding: 8px 12px;
+    }
+    ul {
+      line-height: 1.8;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.85em;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+    .badge-new {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+    .badge-updated {
+      background: #f3e5f5;
+      color: #7b1fa2;
+    }
+    .highlight {
+      background: #fff3cd;
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+    .version-info {
+      background: #e8f5e9;
+      padding: 16px;
+      border-radius: 6px;
+      border-left: 4px solid #4caf50;
+      margin: 20px 0;
+    }
   </style>
 </head>
 <body>
+<div class="container">
 <h1>MES 시스템 기술 아키텍처</h1>
 
 <h2>📋 프로젝트 개요</h2>
 
 <p>제조 실행 시스템(Manufacturing Execution System)을 위한 풀스택 웹 애플리케이션입니다. 생산 계획, 작업 지시, BOM(Bill of Materials), 라우팅 관리 등 제조 현장의 핵심 업무를 지원합니다.</p>
 
+<div class="version-info">
+  <strong>📌 최신 버전</strong><br>
+  Next.js 15.5.4 | React 19.1.0 | TypeScript 5.x | Tailwind CSS 4.x<br>
+  <small>최종 업데이트: 2025년 10월 18일</small>
+</div>
+
 <h2>🛠 기술 스택</h2>
 
 <h3>Frontend</h3>
-<ul><li><strong>Framework</strong>: Next.js 15.5.4 (App Router)</li><li><strong>UI Library</strong>: React 19.1.0</li><li><strong>Language</strong>: TypeScript 5.x</li><li><strong>Styling</strong>: Tailwind CSS 4.x</li><li><strong>State Management</strong>: Zustand (커스텀 구현)</li><li><strong>Data Fetching</strong>: TanStack React Query 5.90.2</li><li><strong>Build Tool</strong>: Turbopack (Next.js 내장)</li><li><strong>Excel Export</strong>: xlsx 0.18.5</li></ul>
+<table>
+  <tr>
+    <th>카테고리</th>
+    <th>기술</th>
+    <th>버전</th>
+    <th>용도</th>
+  </tr>
+  <tr>
+    <td><strong>프레임워크</strong></td>
+    <td>Next.js</td>
+    <td>15.5.4</td>
+    <td>App Router 기반 풀스택 프레임워크</td>
+  </tr>
+  <tr>
+    <td><strong>UI 라이브러리</strong></td>
+    <td>React</td>
+    <td>19.1.0</td>
+    <td>사용자 인터페이스 구축</td>
+  </tr>
+  <tr>
+    <td><strong>언어</strong></td>
+    <td>TypeScript</td>
+    <td>5.x</td>
+    <td>타입 안전성 보장</td>
+  </tr>
+  <tr>
+    <td><strong>스타일링</strong></td>
+    <td>Tailwind CSS</td>
+    <td>4.x</td>
+    <td>유틸리티 기반 CSS 프레임워크</td>
+  </tr>
+  <tr>
+    <td><strong>빌드 도구</strong></td>
+    <td>Turbopack</td>
+    <td>(내장)</td>
+    <td>고속 빌드 및 개발 서버</td>
+  </tr>
+  <tr>
+    <td><strong>상태 관리</strong></td>
+    <td>Zustand</td>
+    <td>(커스텀)</td>
+    <td>경량 상태 관리</td>
+  </tr>
+  <tr>
+    <td><strong>데이터 페칭</strong></td>
+    <td>TanStack React Query</td>
+    <td>5.90.2</td>
+    <td>서버 상태 캐싱 및 동기화</td>
+  </tr>
+  <tr>
+    <td><strong>차트</strong> <span class="badge badge-new">NEW</span></td>
+    <td>Recharts</td>
+    <td>3.2.1</td>
+    <td>데이터 시각화 및 차트 렌더링</td>
+  </tr>
+  <tr>
+    <td><strong>마크다운</strong> <span class="badge badge-new">NEW</span></td>
+    <td>React Markdown</td>
+    <td>10.1.0</td>
+    <td>마크다운 렌더링 (챗봇)</td>
+  </tr>
+  <tr>
+    <td><strong>GFM 지원</strong> <span class="badge badge-new">NEW</span></td>
+    <td>remark-gfm</td>
+    <td>4.0.1</td>
+    <td>GitHub Flavored Markdown</td>
+  </tr>
+  <tr>
+    <td><strong>Excel Export</strong></td>
+    <td>xlsx</td>
+    <td>0.18.5</td>
+    <td>Excel 파일 생성</td>
+  </tr>
+</table>
 
 <h3>Backend</h3>
-<ul><li><strong>Runtime</strong>: Node.js 20+</li><li><strong>API</strong>: Next.js API Routes</li><li><strong>Database</strong>: Azure SQL Database</li><li><strong>Database Driver</strong>: mssql 12.0.0, tedious 19.0.0</li><li><strong>File Storage</strong>: Azure Blob Storage (@azure/storage-blob 12.28.0)</li></ul>
+<table>
+  <tr>
+    <th>카테고리</th>
+    <th>기술</th>
+    <th>버전</th>
+    <th>용도</th>
+  </tr>
+  <tr>
+    <td><strong>런타임</strong></td>
+    <td>Node.js</td>
+    <td>20+</td>
+    <td>서버 사이드 실행 환경</td>
+  </tr>
+  <tr>
+    <td><strong>API</strong></td>
+    <td>Next.js API Routes</td>
+    <td>-</td>
+    <td>RESTful API 엔드포인트</td>
+  </tr>
+  <tr>
+    <td><strong>데이터베이스</strong></td>
+    <td>Azure SQL Database</td>
+    <td>-</td>
+    <td>관계형 데이터베이스</td>
+  </tr>
+  <tr>
+    <td><strong>DB 드라이버</strong></td>
+    <td>mssql</td>
+    <td>12.0.0</td>
+    <td>SQL Server 클라이언트</td>
+  </tr>
+  <tr>
+    <td><strong>DB 프로토콜</strong></td>
+    <td>tedious</td>
+    <td>19.0.0</td>
+    <td>TDS 프로토콜 구현</td>
+  </tr>
+  <tr>
+    <td><strong>파일 스토리지</strong></td>
+    <td>Azure Blob Storage</td>
+    <td>-</td>
+    <td>이미지 저장소</td>
+  </tr>
+  <tr>
+    <td><strong>Azure SDK</strong></td>
+    <td>@azure/storage-blob</td>
+    <td>12.28.0</td>
+    <td>Blob Storage 클라이언트</td>
+  </tr>
+</table>
+
+<h3>AI & Chatbot <span class="badge badge-new">NEW</span></h3>
+<table>
+  <tr>
+    <th>카테고리</th>
+    <th>기술</th>
+    <th>버전</th>
+    <th>용도</th>
+  </tr>
+  <tr>
+    <td><strong>AI API</strong></td>
+    <td>OpenAI</td>
+    <td>6.3.0</td>
+    <td>GPT 기반 챗봇 (선택적: DeepSeek)</td>
+  </tr>
+  <tr>
+    <td><strong>마크다운 렌더링</strong></td>
+    <td>react-markdown</td>
+    <td>10.1.0</td>
+    <td>AI 응답 포맷팅</td>
+  </tr>
+  <tr>
+    <td><strong>GFM 파싱</strong></td>
+    <td>remark-gfm</td>
+    <td>4.0.1</td>
+    <td>테이블, 체크박스 등 지원</td>
+  </tr>
+</table>
 
 <h3>Development Tools</h3>
-<ul><li><strong>Linter</strong>: ESLint 9.x</li><li><strong>CSS Framework</strong>: Tailwind CSS 4.x with PostCSS</li><li><strong>Type Checking</strong>: TypeScript strict mode</li></ul>
+<table>
+  <tr>
+    <th>카테고리</th>
+    <th>기술</th>
+    <th>버전</th>
+    <th>용도</th>
+  </tr>
+  <tr>
+    <td><strong>린터</strong></td>
+    <td>ESLint</td>
+    <td>9.x</td>
+    <td>코드 품질 검사</td>
+  </tr>
+  <tr>
+    <td><strong>타입 체킹</strong></td>
+    <td>TypeScript Compiler</td>
+    <td>5.x</td>
+    <td>정적 타입 검사</td>
+  </tr>
+  <tr>
+    <td><strong>CSS 처리</strong></td>
+    <td>PostCSS</td>
+    <td>-</td>
+    <td>CSS 변환 및 최적화</td>
+  </tr>
+  <tr>
+    <td><strong>코딩 규칙</strong></td>
+    <td>.cursorrules</td>
+    <td>-</td>
+    <td>프로젝트 표준 규칙</td>
+  </tr>
+</table>
 
 <h2>🏗 시스템 아키텍처</h2>
 
@@ -80,12 +363,15 @@
 
 <h2>📁 프로젝트 구조</h2>
 
-<pre><code>
-test-db/
+<pre><code>MES_DB/
 ├── src/
 │   ├── app/                          # Next.js App Router
 │   │   ├── (sections)/              # 동적 섹션 라우트
 │   │   ├── api/                     # API Routes
+│   │   │   ├── <span class="highlight">chat/</span>                  # <span class="badge badge-new">NEW</span> 챗봇 API
+│   │   │   │   ├── <span class="highlight">send/</span>             # 메시지 전송
+│   │   │   │   ├── <span class="highlight">history/</span>          # 대화 이력 조회
+│   │   │   │   └── <span class="highlight">sessions/</span>         # 세션 관리
 │   │   │   ├── mes/                 # MES 관련 API
 │   │   │   │   ├── boms/           # BOM 관리
 │   │   │   │   ├── customers/      # 거래처 관리
@@ -93,14 +379,19 @@ test-db/
 │   │   │   │   ├── equipments/     # 설비 관리
 │   │   │   │   ├── lines/          # 라인 관리
 │   │   │   │   ├── login/          # 로그인
+│   │   │   │   ├── login-history/  # 로그인 이력
+│   │   │   │   ├── logout/         # 로그아웃
 │   │   │   │   ├── materials/      # 자재 관리
 │   │   │   │   ├── processes/      # 공정 관리
 │   │   │   │   ├── products/       # 제품 관리
+│   │   │   │   ├── production-plans/ # 생산계획
 │   │   │   │   ├── roles/          # 역할 관리
 │   │   │   │   ├── routings/       # 라우팅 관리
 │   │   │   │   ├── users/          # 사용자 관리
+│   │   │   │   ├── warehouses/     # 창고 관리
 │   │   │   │   └── work-orders/    # 작업지시 관리
 │   │   │   ├── upload-image/       # 이미지 업로드
+│   │   │   ├── check-ip/           # IP 확인
 │   │   │   └── test-connection/    # DB 연결 테스트
 │   │   ├── basic-info/              # 기본정보 페이지
 │   │   │   ├── bom/                # BOM 관리
@@ -108,6 +399,7 @@ test-db/
 │   │   │   ├── departments/        # 부서 관리
 │   │   │   ├── equipments/         # 설비 관리
 │   │   │   ├── lines/              # 라인 관리
+│   │   │   ├── login-history/      # 로그인 이력
 │   │   │   ├── materials/          # 자재 관리
 │   │   │   ├── processes/          # 공정 관리
 │   │   │   ├── products/           # 제품 관리
@@ -126,12 +418,20 @@ test-db/
 │   │   ├── LayoutClient.tsx         # 클라이언트 레이아웃
 │   │   ├── Sidebar.tsx              # 사이드바
 │   │   ├── TabBar.tsx               # 탭 바
-│   │   └── Topbar.tsx               # 상단바
+│   │   ├── Topbar.tsx               # 상단바
+│   │   ├── <span class="highlight">ChatBot.tsx</span>              # <span class="badge badge-new">NEW</span> 챗봇 메인
+│   │   ├── <span class="highlight">ChatBotButton.tsx</span>        # <span class="badge badge-new">NEW</span> 챗봇 버튼
+│   │   ├── <span class="highlight">ChatInput.tsx</span>            # <span class="badge badge-new">NEW</span> 입력 인터페이스
+│   │   ├── <span class="highlight">ChatMessage.tsx</span>          # <span class="badge badge-new">NEW</span> 메시지 컴포넌트
+│   │   ├── <span class="highlight">ChartRenderer.tsx</span>        # <span class="badge badge-new">NEW</span> 차트 렌더링
+│   │   └── <span class="highlight">ChartRendererCore.tsx</span>    # <span class="badge badge-new">NEW</span> 차트 코어
 │   ├── lib/                          # 유틸리티 라이브러리
 │   │   ├── db.ts                    # 데이터베이스 연결
 │   │   ├── db-queries.ts            # 쿼리 실행 함수
 │   │   ├── azure-storage.ts         # Azure Blob Storage
 │   │   ├── permissions.ts           # 권한 관리
+│   │   ├── <span class="highlight">chat-queries.ts</span>          # <span class="badge badge-new">NEW</span> 챗봇 쿼리
+│   │   ├── <span class="highlight">openai-helper.ts</span>         # <span class="badge badge-new">NEW</span> OpenAI 헬퍼
 │   │   └── react-query-provider.tsx # React Query 설정
 │   ├── store/                        # 상태 관리
 │   │   ├── authStore.ts             # 인증 상태
@@ -143,11 +443,11 @@ test-db/
 │       ├── product-actions.ts       # 제품 액션
 │       └── user-actions.ts          # 사용자 액션
 ├── public/                           # 정적 파일
+│   └── architecture.html            # 이 문서
 ├── .cursorrules                      # 프로젝트 코딩 규칙
 ├── eslint.config.mjs                 # ESLint 설정
 ├── next.config.ts                    # Next.js 설정
 ├── tsconfig.json                     # TypeScript 설정
-├── tailwind.config.ts                # Tailwind CSS 설정
 └── package.json                      # 패키지 의존성
 </code></pre>
 
@@ -162,8 +462,23 @@ test-db/
 <h3>3. 생산 관리</h3>
 <ul><li><strong>생산 계획</strong>: 계획 수립, 진행 상태 추적</li><li><strong>작업 지시</strong>: 생산 계획 기반 작업 지시 생성</li><li><strong>BOM 스냅샷</strong>: 작업 지시 시점의 BOM 데이터 저장</li><li><strong>라우팅 스냅샷</strong>: 작업 지시 시점의 라우팅 데이터 저장</li></ul>
 
-<h3>4. 데이터 시각화 및 Export</h3>
-<ul><li><strong>Excel 내보내기</strong>: 모든 데이터 테이블 Excel 다운로드 지원</li><li><strong>실시간 검색 및 필터링</strong>: 클라이언트 사이드 필터링</li><li><strong>상태별 필터</strong>: 활성/비활성, 진행 상태별 조회</li></ul>
+<h3>4. AI 챗봇 <span class="badge badge-new">NEW</span></h3>
+<ul>
+  <li><strong>자연어 질의응답</strong>: GPT 기반 대화형 인터페이스</li>
+  <li><strong>데이터베이스 통합</strong>: SQL 쿼리 자동 생성 및 실행</li>
+  <li><strong>차트 시각화</strong>: 데이터 분석 결과를 차트로 표시</li>
+  <li><strong>대화 이력 관리</strong>: 세션별 대화 내용 저장</li>
+  <li><strong>마크다운 지원</strong>: 표, 코드 블록, 링크 등 GFM 지원</li>
+  <li><strong>OpenAI/DeepSeek</strong>: 선택 가능한 AI 모델</li>
+</ul>
+
+<h3>5. 데이터 시각화 및 Export</h3>
+<ul>
+  <li><strong>Excel 내보내기</strong>: 모든 데이터 테이블 Excel 다운로드 지원</li>
+  <li><strong>실시간 검색 및 필터링</strong>: 클라이언트 사이드 필터링</li>
+  <li><strong>상태별 필터</strong>: 활성/비활성, 진행 상태별 조회</li>
+  <li><strong>차트 렌더링</strong> <span class="badge badge-new">NEW</span>: Recharts 기반 동적 차트 생성 (막대, 선, 파이, 영역 차트)</li>
+</ul>
 
 <h2>🗄 데이터베이스 구조</h2>
 
@@ -180,6 +495,13 @@ test-db/
 
 <h4>4. 작업 관리</h4>
 <ul><li>`production_plans`: 생산 계획</li><li>`work_orders`: 작업 지시</li><li>`work_order_routing_steps`: 작업지시별 라우팅 스냅샷</li><li>`work_order_materials`: 작업지시별 자재 스냅샷</li><li>`warehouses`: 창고 정보</li></ul>
+
+<h4>5. 챗봇 관련 <span class="badge badge-new">NEW</span></h4>
+<ul>
+  <li>`chat_sessions`: 챗봇 세션 정보</li>
+  <li>`chat_messages`: 대화 메시지 이력</li>
+  <li>`chat_queries`: SQL 쿼리 실행 로그</li>
+</ul>
 
 <h2>🔄 상태 관리 아키텍처</h2>
 
@@ -224,24 +546,32 @@ DELETE /api/mes/{resource}        # 삭제
 
 <h3>API Routes</h3>
 <pre><code>
-/api/mes/
-├── boms/              # BOM CRUD + 아이템 저장
-├── customers/         # 거래처 CRUD
-├── departments/       # 부서 CRUD
-├── equipments/        # 설비 CRUD
-├── lines/             # 라인 CRUD
-├── login/             # 로그인 인증
-├── logout/            # 로그아웃
-├── login-history/     # 로그인 이력 조회
-├── materials/         # 자재 CRUD
-├── processes/         # 공정 CRUD
-├── products/          # 제품 CRUD
-├── production-plans/  # 생산계획 CRUD
-├── roles/             # 역할 CRUD
-├── routings/          # 라우팅 CRUD + 단계 저장
-├── users/             # 사용자 CRUD
-├── warehouses/        # 창고 CRUD
-└── work-orders/       # 작업지시 CRUD + 스냅샷 생성
+/api/
+├── <span class="highlight">chat/</span>               # <span class="badge badge-new">NEW</span> 챗봇 API
+│   ├── <span class="highlight">send/</span>           # 메시지 전송 및 AI 응답
+│   ├── <span class="highlight">history/</span>        # 대화 이력 조회
+│   └── <span class="highlight">sessions/</span>       # 세션 생성/조회/삭제
+├── mes/
+│   ├── boms/          # BOM CRUD + 아이템 저장
+│   ├── customers/     # 거래처 CRUD
+│   ├── departments/   # 부서 CRUD
+│   ├── equipments/    # 설비 CRUD
+│   ├── lines/         # 라인 CRUD
+│   ├── login/         # 로그인 인증
+│   ├── logout/        # 로그아웃
+│   ├── login-history/ # 로그인 이력 조회
+│   ├── materials/     # 자재 CRUD
+│   ├── processes/     # 공정 CRUD
+│   ├── products/      # 제품 CRUD
+│   ├── production-plans/ # 생산계획 CRUD
+│   ├── roles/         # 역할 CRUD
+│   ├── routings/      # 라우팅 CRUD + 단계 저장
+│   ├── users/         # 사용자 CRUD
+│   ├── warehouses/    # 창고 CRUD
+│   └── work-orders/   # 작업지시 CRUD + 스냅샷 생성
+├── upload-image/      # 이미지 업로드 (Azure Blob)
+├── check-ip/          # IP 주소 확인
+└── test-connection/   # DB 연결 테스트
 </code></pre>
 
 <h2>🔐 보안 아키텍처</h2>
@@ -350,17 +680,21 @@ npm run start  # 프로덕션 서버 시작
 </code></pre>
 
 <h3>환경 변수 (.env.local)</h3>
-<pre><code>bash
-<h1>Azure SQL Database</h1>
+<pre><code># Azure SQL Database
 DB_SERVER=your-server.database.windows.net
 DB_NAME=your-database
 DB_USER=your-username
 DB_PASSWORD=your-password
 
-<h1>Azure Blob Storage</h1>
+# Azure Blob Storage
 AZURE_STORAGE_ACCOUNT_NAME=your-account
 AZURE_STORAGE_ACCOUNT_KEY=your-key
 AZURE_STORAGE_CONTAINER_NAME=mes-images
+
+# AI Chatbot (선택사항)
+OPENAI_API_KEY=your-openai-api-key
+# 또는 DeepSeek
+DEEPSEEK_API_KEY=your-deepseek-api-key
 </code></pre>
 
 <h3>배포 플랫폼</h3>
@@ -460,6 +794,24 @@ export interface Product {
 <h3>3. 이미지 관리</h3>
 <ul><li>Azure Blob Storage 연동</li><li>Next.js Image 컴포넌트 최적화</li><li>이미지 업로드 및 삭제</li><li>실패 시 Fallback 이미지</li></ul>
 
+<h3>4. AI 챗봇 시스템 <span class="badge badge-new">NEW</span></h3>
+<ul>
+  <li><strong>자연어 처리</strong>: GPT-4 또는 DeepSeek 모델 사용</li>
+  <li><strong>SQL 자동 생성</strong>: 자연어 질문을 SQL 쿼리로 변환</li>
+  <li><strong>실시간 데이터 조회</strong>: 데이터베이스에서 즉시 결과 반환</li>
+  <li><strong>차트 생성</strong>: 데이터 분석 결과를 시각화</li>
+  <li><strong>대화 컨텍스트 유지</strong>: 세션 기반 대화 이력 관리</li>
+  <li><strong>마크다운 렌더링</strong>: GFM 지원 (테이블, 코드 블록, 링크)</li>
+</ul>
+
+<h3>5. 차트 시각화 <span class="badge badge-new">NEW</span></h3>
+<ul>
+  <li><strong>동적 차트 생성</strong>: AI가 적절한 차트 타입 선택</li>
+  <li><strong>지원 차트 타입</strong>: 막대, 선, 파이, 영역 차트</li>
+  <li><strong>반응형 디자인</strong>: 화면 크기에 맞춘 자동 조정</li>
+  <li><strong>인터랙티브</strong>: 툴팁, 범례, 축 레이블</li>
+</ul>
+
 <h2>📊 성능 지표</h2>
 
 <h3>목표</h3>
@@ -499,7 +851,20 @@ console.log('⚠️ 경고:', warning);
 
 <h2>📚 관련 문서</h2>
 
-<ul><li>`QUICK_START.md`: 빠른 시작 가이드</li><li>`SETUP_GUIDE.md`: 초기 설정 가이드</li><li>`AZURE_SQL_GUIDE.md`: Azure SQL 설정</li><li>`AZURE_BLOB_STORAGE_SETUP.md`: Azure Blob 설정</li><li>`BOM_ROUTING_SNAPSHOT_GUIDE.md`: BOM 스냅샷 가이드</li><li>`WORK_ORDER_SNAPSHOT_GUIDE.md`: 작업지시 스냅샷 가이드</li><li>`PERFORMANCE_OPTIMIZATION_GUIDE.md`: 성능 최적화</li><li>`PERMISSIONS_UPDATE_GUIDE.md`: 권한 관리</li></ul>
+<ul>
+  <li><code>QUICK_START.md</code>: 빠른 시작 가이드</li>
+  <li><code>SETUP_GUIDE.md</code>: 초기 설정 가이드</li>
+  <li><code>AZURE_SQL_GUIDE.md</code>: Azure SQL 설정</li>
+  <li><code>AZURE_BLOB_STORAGE_SETUP.md</code>: Azure Blob 설정</li>
+  <li><code>BOM_ROUTING_SNAPSHOT_GUIDE.md</code>: BOM 스냅샷 가이드</li>
+  <li><code>WORK_ORDER_SNAPSHOT_GUIDE.md</code>: 작업지시 스냅샷 가이드</li>
+  <li><code>PERFORMANCE_OPTIMIZATION_GUIDE.md</code>: 성능 최적화</li>
+  <li><code>PERMISSIONS_UPDATE_GUIDE.md</code>: 권한 관리</li>
+  <li><code>CHATBOT_SETUP.md</code> <span class="badge badge-new">NEW</span>: 챗봇 설정 가이드</li>
+  <li><code>CHATBOT_QUICK_START.md</code> <span class="badge badge-new">NEW</span>: 챗봇 빠른 시작</li>
+  <li><code>OPENAI_PAYMENT_GUIDE.md</code> <span class="badge badge-new">NEW</span>: OpenAI API 결제 설정</li>
+  <li><code>DEEPSEEK_SETUP_GUIDE.md</code> <span class="badge badge-new">NEW</span>: DeepSeek 설정</li>
+</ul>
 
 <h2>🎯 베스트 프랙티스</h2>
 
@@ -518,7 +883,15 @@ console.log('⚠️ 경고:', warning);
 <h2>🔮 향후 개선 사항</h2>
 
 <h3>단기 (1-3개월)</h3>
-<ul><li>[ ] 비밀번호 해싱 (bcrypt)</li><li>[ ] JWT 기반 인증</li><li>[ ] 실시간 알림 시스템</li><li>[ ] 대시보드 추가</li></ul>
+<ul>
+  <li>[✅] <del>AI 챗봇 통합</del> (완료)</li>
+  <li>[✅] <del>차트 시각화 기능</del> (완료)</li>
+  <li>[ ] 비밀번호 해싱 (bcrypt)</li>
+  <li>[ ] JWT 기반 인증</li>
+  <li>[ ] 실시간 알림 시스템</li>
+  <li>[ ] 대시보드 추가</li>
+  <li>[ ] 챗봇 음성 인식</li>
+</ul>
 
 <h3>중기 (3-6개월)</h3>
 <ul><li>[ ] 생산 실적 관리</li><li>[ ] 품질 관리 모듈</li><li>[ ] 재고 관리 통합</li><li>[ ] 보고서 생성 기능</li></ul>
@@ -526,10 +899,30 @@ console.log('⚠️ 경고:', warning);
 <h3>장기 (6-12개월)</h3>
 <ul><li>[ ] 모바일 앱 (React Native)</li><li>[ ] AI 기반 생산 최적화</li><li>[ ] IoT 설비 연동</li><li>[ ] 실시간 모니터링 대시보드</li></ul>
 
-<p>---</p>
+---
 
-<p><strong>문서 버전</strong>: 1.0.0  
-<strong>최종 수정일</strong>: 2025-10-11  
-<strong>작성자</strong>: MES Development Team</p>
+<div class="version-info" style="margin-top: 40px;">
+  <strong>📋 문서 정보</strong><br>
+  <strong>버전</strong>: 2.0.0 <span class="badge badge-updated">UPDATED</span><br>
+  <strong>최종 수정일</strong>: 2025년 10월 18일<br>
+  <strong>작성자</strong>: MES Development Team<br>
+  <strong>변경사항</strong>: AI 챗봇, 차트 시각화 추가
+</div>
+
+<h2>✨ 주요 업데이트 (v2.0.0)</h2>
+
+<ul>
+  <li>✅ <strong>AI 챗봇</strong>: OpenAI GPT-4 기반 자연어 데이터 조회</li>
+  <li>✅ <strong>차트 시각화</strong>: Recharts 통합, 동적 차트 생성</li>
+  <li>✅ <strong>마크다운 렌더링</strong>: react-markdown + remark-gfm</li>
+  <li>✅ <strong>대화 이력 관리</strong>: 세션 기반 챗봇 대화 저장</li>
+  <li>✅ <strong>SQL 자동 생성</strong>: 자연어를 SQL 쿼리로 변환</li>
+</ul>
+
+<p style="text-align: center; margin-top: 40px; color: #666;">
+  <small>© 2025 MES Development Team. All rights reserved.</small>
+</p>
+
+</div>
 </body>
 </html>
